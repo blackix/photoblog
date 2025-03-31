@@ -1,0 +1,717 @@
+{% extends "blog/base.html" %}
+{% load static %}
+
+{% block extra_css %}
+<style>
+    .photo-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+        gap: 15px;
+    }
+    .photo-item {
+        background-color: var(--sidebar-bg);
+        border-radius: 8px;
+        overflow: hidden;
+        box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        transition: transform 0.2s ease-in-out;
+        cursor: pointer;
+    }
+    .photo-item:hover {
+        transform: scale(1.03);
+    }
+    .photo-frame {
+        width: 100%;
+        padding-top: 100%; /* Aspect ratio 1:1 */
+        position: relative;
+        overflow: hidden;
+    }
+    .photo-frame img {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+    }
+    .photo-caption, .reaction-bar, .photo-metadata-row {
+        padding: 8px 12px;
+    }
+    .reaction-bar {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        border-top: 1px solid var(--border-color);
+    }
+    .like-button, .comment-count-display {
+        color: var(--text-color);
+        background: none;
+        border: none;
+        cursor: pointer;
+        padding: 5px;
+    }
+    .like-button.liked .heart-icon {
+        color: red;
+    }
+    .heart-icon {
+        color: var(--text-color); /* Default color */
+    }
+    .photo-metadata-row {
+        font-size: 0.8em;
+        border-top: 1px solid var(--border-color);
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+    .photo-metadata-row span {
+        margin-right: 5px;
+    }
+
+    /* Fullscreen Slideshow Styles */
+    .fullscreen-slideshow {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(0, 0, 0, 0.9);
+        z-index: 9999;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .slideshow-controls {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        padding: 20px;
+        display: flex;
+        justify-content: space-between;
+        z-index: 10000;
+    }
+
+    .btn-slideshow-prev, .btn-slideshow-next, .btn-slideshow-close {
+        background-color: rgba(0, 0, 0, 0.5);
+        color: white;
+        border: none;
+        border-radius: 50%;
+        width: 50px;
+        height: 50px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        transition: background-color 0.3s;
+    }
+
+    .btn-slideshow-prev:hover, .btn-slideshow-next:hover, .btn-slideshow-close:hover {
+        background-color: rgba(0, 0, 0, 0.8);
+    }
+
+    .slideshow-slides {
+        width: 100%;
+        height: 100%;
+        position: relative;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .slideshow-slide {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        display: none;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .slideshow-slide.active {
+        display: flex;
+    }
+
+    .slideshow-slide img {
+        max-width: 90%;
+        max-height: 80%;
+        object-fit: contain;
+    }
+
+    /* Info Panel */
+    .slideshow-info-panel {
+        position: absolute;
+        bottom: 0;
+        left: 0;
+        width: 100%;
+        background-color: rgba(0, 0, 0, 0.7);
+        color: white;
+        padding: 15px;
+        display: flex;
+        flex-direction: column;
+        max-height: 30vh;
+    }
+
+    .photo-metadata {
+        display: flex;
+        justify-content: center;
+        margin-bottom: 10px;
+        font-size: 0.9em;
+    }
+
+    .photo-metadata span {
+        margin: 0 10px;
+        color: #ccc;
+    }
+
+    .photo-interactions {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 10px;
+        padding: 0 20px;
+    }
+
+    .btn-like {
+        background: none;
+        border: none;
+        color: white;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+    }
+
+    .btn-like .heart-icon {
+        margin-right: 5px;
+        color: #aaa;
+    }
+
+    .btn-like.liked .heart-icon {
+        color: #e44d4d;
+    }
+
+    .comment-count {
+        color: #ccc;
+        font-size: 0.9em;
+    }
+
+    .photo-comments {
+        overflow-y: auto;
+        max-height: 20vh;
+        padding: 0 20px;
+    }
+
+    #commentsListModal {
+        margin-bottom: 10px;
+    }
+
+    .comment-item {
+        margin-bottom: 8px;
+        padding-bottom: 8px;
+        border-bottom: 1px solid #444;
+    }
+
+    .comment-author {
+        font-weight: bold;
+        margin-right: 8px;
+    }
+
+    .comment-date {
+        font-size: 0.8em;
+        color: #aaa;
+    }
+
+    .comment-input-group {
+        display: flex;
+        margin-top: 10px;
+    }
+
+    .comment-input-group input {
+        flex-grow: 1;
+        background-color: #333;
+        border: 1px solid #555;
+        color: white;
+        padding: 8px 12px;
+        border-radius: 4px 0 0 4px;
+    }
+
+    .comment-input-group button {
+        background-color: #555;
+        color: white;
+        border: none;
+        padding: 8px 15px;
+        border-radius: 0 4px 4px 0;
+        cursor: pointer;
+    }
+
+    .loading-text {
+        text-align: center;
+        color: #aaa;
+        font-style: italic;
+    }
+
+    .login-to-comment {
+        text-align: center;
+        font-size: 0.9em;
+    }
+
+    .login-to-comment a {
+        color: #4a9eff;
+        text-decoration: none;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container" 
+     data-get-comments-url-base="{% url 'get_photo_comments' photo_id=0 %}"
+     data-add-comment-url-base="{% url 'add_comment_photo' photo_id=0 %}"
+     data-update-photo-url-base="{% url 'update_photo' photo_id=0 %}"
+     data-toggle-like-url-base="{% url 'toggle_like_photo' photo_id=0 %}"
+     data-is-authenticated="{{ user.is_authenticated|yesno:'true,false' }}">
+    <div class="album-header">
+        <div class="d-flex justify-content-between align-items-center">
+            <h1>{{ album.title }}</h1>
+            <a href="{% url 'blog_view' username=blog_user.username %}" class="btn btn-outline-primary">Torna al Blog</a>
+        </div>
+        <p class="text-muted">{{ album.description }}</p>
+    </div>
+    
+    <div class="photo-grid">
+        {% for photo in photos %}
+            <div class="photo-item" data-photo-id="{{ photo.id }}">
+                <div class="photo-frame">
+                    <img src="{{ photo.image.url }}" alt="Photo" class="photo-thumbnail" data-photo-id="{{ photo.id }}" data-photo-src="{{ photo.image.url }}" data-photo-title="{{ photo.title }}">
+                </div>
+                {% if photo.caption %}
+                <div class="photo-caption">
+                    <p>{{ photo.caption }}</p>
+                </div>
+                {% endif %}
+                
+                <div class="reaction-bar p-2">
+                    {% if user.is_authenticated %}
+                        <button class="like-button {% if photo.id in liked_photos %}liked{% endif %}" data-photo-id="{{ photo.id }}">
+                            <i class="fas fa-heart heart-icon"></i>
+                            <span class="like-count">{{ photo.likes.count }}</span>
+                        </button>
+                        <span class="comment-count-display ms-3">
+                            <i class="fas fa-comment"></i>
+                            <span class="comment-count">{{ photo.comments.count }}</span>
+                        </span>
+                    {% else %}
+                        <div class="like-count-display">
+                            <i class="fas fa-heart heart-icon"></i> {{ photo.likes.count }}
+                        </div>
+                        <div class="comment-count-display">
+                            <i class="fas fa-comment"></i> {{ photo.comments.count }}
+                        </div>
+                    {% endif %}
+                </div>
+                
+                <!-- Photo Metadata Row -->
+                <div class="photo-metadata-row small text-muted p-2">
+                    {% with camera_info=photo.metadata.CameraInfo %}
+                        <span>{{ camera_info.Modello|default_if_none:'-' }}</span> |
+                        <span>{{ camera_info.Lunghezza Focale|default_if_none:'-' }}</span> |
+                        <span>{{ camera_info.Apertura|default_if_none:'-' }}</span> |
+                        <span>{{ camera_info.Tempo Esposizione|default_if_none:'-' }}</span>
+                    {% endwith %}
+                </div>
+            </div>
+        {% endfor %}
+    </div>
+</div>
+
+{{ photos_data|json_script:"photos-data-json" }}
+
+<!-- Fullscreen Slideshow for Photos -->
+<div class="fullscreen-slideshow" id="photoDetailModal" style="display: none !important;">
+    <div class="slideshow-controls">
+        <button class="btn-slideshow-prev">
+            <i class="fas fa-chevron-left"></i>
+        </button>
+        <button class="btn-slideshow-close">
+            <i class="fas fa-times"></i>
+        </button>
+        <button class="btn-slideshow-next">
+            <i class="fas fa-chevron-right"></i>
+        </button>
+    </div>
+    <div class="slideshow-slides">
+        <!-- Slides will be populated dynamically -->
+    </div>
+    
+    <!-- Photo Info Panel -->
+    <div class="slideshow-info-panel">
+        <div class="photo-metadata">
+            <span id="metadataCamera"></span>
+            <span id="metadataFocal"></span>
+            <span id="metadataExposure"></span>
+            <span id="metadataAperture"></span>
+        </div>
+        
+        <div class="photo-interactions">
+            <button id="modalLikeButton" class="btn-like" data-photo-id="">
+                <i class="fas fa-heart heart-icon"></i> <span id="modalLikeCount">0</span>
+            </button>
+            <span class="comment-count"><span id="commentCountModal">0</span> Commenti</span>
+        </div>
+        
+        <div class="photo-comments">
+            <div id="commentsListModal">
+                <p class="loading-text">Caricamento commenti...</p>
+            </div>
+            {% if user.is_authenticated %}
+            <form id="commentFormModal">
+                <div class="comment-input-group">
+                    <input type="text" id="commentTextModal" placeholder="Aggiungi un commento...">
+                    <button type="submit">Invia</button>
+                </div>
+            </form>
+            {% else %}
+            <p class="login-to-comment" style="display: none;"><a href="{% url 'login' %}?next={{ request.path }}">Accedi</a> per commentare.</p>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+
+{% block extra_js %}
+<script>
+    $(document).ready(function() {
+        // Carica i dati delle foto dal JSON script tag
+        const photosDataJson = document.getElementById('photos-data-json').textContent;
+        const photosData = JSON.parse(photosDataJson);
+        
+        // Variabile per verificare se l'utente è autenticato (letta da data attribute)
+        const isAuthenticated = $('.container').data('is-authenticated') === true;
+        
+        let currentPhotoIndex = 0; // To track the current photo in the modal
+        
+        // Create slides for all photos
+        function createSlides() {
+            const slidesContainer = $('.slideshow-slides');
+            slidesContainer.empty();
+            
+            console.log("Creating slides for photos:", photosData);
+            
+            photosData.forEach((photo, index) => {
+                // Use image.url if image_url is not available
+                const imageUrl = photo.image_url || (photo.image ? photo.image.url : '');
+                console.log(`Photo ${index}:`, photo);
+                console.log(`Image URL for photo ${index}:`, imageUrl);
+                
+                const slide = $(`
+                    <div class="slideshow-slide" data-photo-id="${photo.id}">
+                        <img src="${imageUrl}" alt="${photo.caption || 'Foto'}">
+                    </div>
+                `);
+                slidesContainer.append(slide);
+            });
+        }
+        
+        // Initialize slideshow when document is ready
+        createSlides();
+
+        // Function to show a specific photo
+        function showPhoto(photoId) {
+            console.log("showPhoto called with ID:", photoId);
+            
+            const photo = photosData.find(p => p.id === photoId);
+            if (!photo) {
+                console.error("Photo data not found for ID:", photoId);
+                hideSlideshow();
+                return;
+            }
+
+            // Find index for navigation
+            currentPhotoIndex = photosData.findIndex(p => p.id === photo.id);
+            if (currentPhotoIndex === -1) {
+                console.error("Could not find index for photo ID:", photo.id);
+                hideSlideshow();
+                return;
+            }
+
+            console.log("Found photo at index:", currentPhotoIndex, photo);
+
+            // Hide all slides and show the current one
+            $('.slideshow-slide').removeClass('active');
+            $(`.slideshow-slide[data-photo-id="${photoId}"]`).addClass('active');
+
+            // Update metadata
+            $('#metadataCamera').text(`Camera: ${photo.camera_model || '-'}`);
+            $('#metadataFocal').text(`${photo.focal_length || '-'}mm`);
+            $('#metadataExposure').text(`${photo.exposure || '-'}s`);
+            $('#metadataAperture').text(`f/${photo.f_number || '-'}`);
+
+            // Update like button status and count
+            $('#modalLikeButton').data('photo-id', photoId);
+            $('#modalLikeButton').toggleClass('liked', !!photo.has_liked);
+            $('#modalLikeCount').text(photo.likes_count || 0);
+
+            // Update comment form data attribute and visibility
+            $('#commentFormModal').data('photo-id', photoId);
+            const loginPrompt = $('.login-to-comment');
+            if (!isAuthenticated) {
+                $('#commentFormModal').hide();
+                if(loginPrompt.length) loginPrompt.show();
+            } else {
+                $('#commentFormModal').show();
+                if(loginPrompt.length) loginPrompt.hide();
+            }
+
+            // Load comments
+            loadComments(photoId);
+            
+            // Show the slideshow - force display style to flex
+            const modal = $('#photoDetailModal');
+            console.log("Showing modal element:", modal);
+            modal.css('display', 'flex');
+            
+            // Check if modal is visible after showing
+            setTimeout(() => {
+                console.log("Modal display style:", modal.css('display'));
+                console.log("Modal visibility:", modal.is(':visible') ? 'visible' : 'hidden');
+                console.log("Modal dimensions:", {
+                    width: modal.width(),
+                    height: modal.height(),
+                    offsetWidth: modal[0].offsetWidth,
+                    offsetHeight: modal[0].offsetHeight
+                });
+            }, 100);
+        }
+        
+        // Function to hide slideshow
+        function hideSlideshow() {
+            console.log("hideSlideshow called");
+            $('#photoDetailModal').css('display', 'none');
+        }
+
+        // Click listener for thumbnails
+        $('.photo-thumbnail').click(function() {
+            const photoId = $(this).data('photo-id');
+            if (photoId && photosData.length > 0) {
+                showPhoto(photoId);
+            } else if (photosData.length === 0) {
+                console.warn("No photo data available to display");
+            } else {
+                console.error("Thumbnail clicked without a valid photo ID");
+            }
+        });
+
+        // Also handle clicks on the photo-item div
+        $('.photo-item').click(function() {
+            const photoId = $(this).data('photo-id');
+            if (photoId && photosData.length > 0) {
+                showPhoto(photoId);
+            }
+        });
+
+        // Navigation handlers
+        $('.btn-slideshow-prev').click(function() {
+            if (photosData.length > 0) {
+                const newIndex = (currentPhotoIndex - 1 + photosData.length) % photosData.length;
+                showPhoto(photosData[newIndex].id);
+            }
+        });
+
+        $('.btn-slideshow-next').click(function() {
+            if (photosData.length > 0) {
+                const newIndex = (currentPhotoIndex + 1) % photosData.length;
+                showPhoto(photosData[newIndex].id);
+            }
+        });
+        
+        // Close button handler
+        $('.btn-slideshow-close').click(function() {
+            hideSlideshow();
+        });
+
+        // Keyboard navigation
+        $(document).keydown(function(e) {
+            if ($('#photoDetailModal').is(':visible')) {
+                if (e.key === "ArrowLeft") {
+                    $('.btn-slideshow-prev').click();
+                } else if (e.key === "ArrowRight") {
+                    $('.btn-slideshow-next').click();
+                } else if (e.key === "Escape") {
+                    $('.btn-slideshow-close').click();
+                }
+            }
+        });
+        
+        // Funzione per caricare i commenti (nel modal)
+        function loadComments(photoId) {
+            console.log("Loading comments for photo ID:", photoId);
+            
+            const baseUrl = $('.container').data('get-comments-url-base');
+            if (!baseUrl) {
+                console.error("Base URL for get_photo_comments not found");
+                return;
+            }
+            
+            const url = baseUrl.replace('0', photoId);
+            console.log("Comments URL:", url);
+            
+            const commentsList = $('#commentsListModal');
+            commentsList.html('<p class="loading-text">Caricamento commenti...</p>');
+
+            $.ajax({
+                url: url,
+                method: 'GET',
+                success: function(response) {
+                    console.log("Comments response:", response);
+                    
+                    commentsList.empty();
+                    $('#commentCountModal').text(response.comments.length);
+                    
+                    if (response.comments.length === 0) {
+                        commentsList.html('<p class="loading-text">Nessun commento</p>');
+                    } else {
+                        response.comments.forEach(function(comment) {
+                            let deleteButtonHtml = '';
+                            if (isAuthenticated && comment.isOwner) {
+                                deleteButtonHtml = `<button class="delete-comment" data-comment-id="${comment.id}" title="Elimina">&times;</button>`;
+                            }
+                            
+                            const sanitizedContent = $('<div/>').text(comment.content || '').html();
+                            const commentHtml = `
+                                <div class="comment-item">
+                                    <div class="comment-details">
+                                        <span class="comment-author">${comment.author || 'Anonimo'}</span>
+                                        <span class="comment-date">${comment.date || ''}</span>
+                                        <div class="comment-text">${sanitizedContent}</div>
+                                    </div>
+                                    ${deleteButtonHtml}
+                                </div>`;
+                            commentsList.append(commentHtml);
+                        });
+                    }
+                },
+                error: function(xhr) {
+                    console.error("Error loading comments:", xhr.responseText);
+                    commentsList.html('<p class="loading-text">Errore caricamento commenti</p>');
+                }
+            });
+        }
+
+        // Gestione dell'invio di un commento (dal modal)
+        $('#commentFormModal').submit(function(e) {
+            e.preventDefault();
+            
+            // Verifica se l'utente è autenticato
+            if (!isAuthenticated) {
+                alert('Devi effettuare il login per commentare le foto');
+                return;
+            }
+            
+            const photoId = $(this).data('photo-id');
+            const commentText = $('#commentTextModal').val().trim();
+            
+            if (!commentText) return;
+            const csrfToken = $('meta[name="csrf-token"]').attr('content');
+            const baseUrl = $('.container').data('add-comment-url-base');
+            
+            if (!commentText || !photoId || !baseUrl || !csrfToken) {
+                console.error("Missing data for comment submission", { photoId, commentText, baseUrl, csrfToken });
+                return;
+            }
+            
+            const url = baseUrl.replace('0', photoId);
+            $.ajax({
+                url: url,
+                method: 'POST',
+                data: {
+                    'content': commentText,
+                    'csrfmiddlewaretoken': csrfToken
+                },
+                success: function(response) {
+                    $('#commentTextModal').val('');
+                    loadComments(photoId);
+                },
+                error: function(xhr) {
+                    console.error("Error submitting comment:", xhr.responseText);
+                    alert('Errore nell\'invio del commento.');
+                }
+            });
+        });
+        
+        // Gestione eliminazione commento
+        $('#commentsListModal').on('click', '.delete-comment', function() {
+            if (!isAuthenticated) return;
+            
+            const commentId = $(this).data('comment-id');
+            const csrfToken = $('meta[name="csrf-token"]').attr('content');
+            const deleteUrl = `/comments/delete/${commentId}/`; // Placeholder
+            
+            if (!commentId || !csrfToken) {
+                console.error("Missing data for comment deletion", { commentId, csrfToken });
+                return;
+            }
+            
+            if (confirm("Sei sicuro di voler eliminare questo commento?")) {
+                $.ajax({
+                    url: deleteUrl,
+                    method: 'POST',
+                    headers: { 'X-CSRFToken': csrfToken },
+                    dataType: 'json',
+                    success: function(response) {
+                        if (response.success) {
+                            const photoId = $('#commentFormModal').data('photo-id');
+                            loadComments(photoId);
+                        } else {
+                            alert(response.error || 'Errore durante l\'eliminazione.');
+                        }
+                    },
+                    error: function(xhr) {
+                        console.error("Error deleting comment:", xhr.responseText);
+                        alert('Errore durante l\'eliminazione del commento.');
+                    }
+                });
+            }
+        });
+
+        // Like button nel modal
+        $('#modalLikeButton').click(function() {
+            if (!isAuthenticated) {
+                alert('Devi effettuare il login per mettere "Mi piace"');
+                return;
+            }
+            
+            const photoId = $(this).data('photo-id');
+            const csrfToken = $('meta[name="csrf-token"]').attr('content');
+            const baseUrl = $('.container').data('toggle-like-url-base');
+            
+            if (!photoId || !baseUrl || !csrfToken) {
+                console.error("Missing data for like toggle", { photoId, baseUrl, csrfToken });
+                return;
+            }
+            
+            const url = baseUrl.replace('0', photoId);
+            $.ajax({
+                url: url,
+                method: 'POST',
+                data: {'csrfmiddlewaretoken': csrfToken},
+                dataType: 'json',
+                success: function(response) {
+                    $('#modalLikeButton').toggleClass('liked', response.liked);
+                    $('#modalLikeCount').text(response.likeCount);
+                    
+                    const likedPhotoIndex = photosData.findIndex(p => p.id === photoId);
+                    if (likedPhotoIndex !== -1) {
+                        photosData[likedPhotoIndex].has_liked = response.liked;
+                        photosData[likedPhotoIndex].likes_count = response.likeCount;
+                    }
+                },
+                error: function(xhr) {
+                    console.error('Error toggling like:', xhr.responseText);
+                    alert('Errore durante l\'operazione di like.');
+                }
+            });
+        });
+    });
+</script>
+{% endblock %}

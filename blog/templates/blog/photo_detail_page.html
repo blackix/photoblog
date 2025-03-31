@@ -1,0 +1,57 @@
+{% extends "blog/base.html" %}
+
+{% block content %}
+<div class="container photo-detail-page">
+    <div class="row">
+        <div class="col-md-8 photo-column">
+            <img src="{{ photo.image_url }}" alt="{{ photo.caption }}" class="photo-detail-image">
+        </div>
+        <div class="col-md-4 metadata-column">
+            <h2>{{ photo.caption }}</h2>
+            <p>{{ photo.description }}</p>
+            <div class="photo-metadata">
+                <p>Camera: <span id="metadataCamera">{{ photo.camera_model|default:"-" }}</span></p>
+                <p>Focal Length: <span id="metadataFocal">{{ photo.focal_length|default:"-" }}mm</span></p>
+                <p>Exposure: <span id="metadataExposure">{{ photo.exposure|default:"-" }}s</span></p>
+                <p>Aperture: <span id="metadataAperture">f/{{ photo.f_number|default:"-" }}</span></p>
+                <p>Date Taken: <span id="metadataDate">{{ photo.date_taken|default:"-" }}</span></p>
+                <p>ISO: <span id="metadataISO">{{ photo.iso|default:"-" }}</span></p>
+            </div>
+            <div class="photo-interactions">
+                <button id="likeButton" class="btn-like" data-photo-id="{{ photo.id }}">
+                    <i class="fas fa-heart heart-icon {% if photo.has_liked %}liked{% endif %}"></i> <span id="likeCount">{{ photo.likes_count }}</span>
+                </button>
+                <span class="comment-count"><span id="commentCount">{{ photo.comments|length }}</span> Commenti</span>
+            </div>
+        </div>
+    </div>
+    <div class="row">
+        <div class="col-md-12 comments-column">
+            <h3>Commenti</h3>
+            <div id="commentsList">
+                {% for comment in photo.comments %}
+                <div class="comment-item">
+                    <div class="comment-details">
+                        <span class="comment-author">{{ comment.author }}</span>
+                        <span class="comment-date">{{ comment.date }}</span>
+                        <div class="comment-text">{{ comment.content }}</div>
+                    </div>
+                </div>
+                {% empty %}
+                <p>Nessun commento.</p>
+                {% endfor %}
+            </div>
+            {% if user.is_authenticated %}
+            <form id="commentForm">
+                <div class="comment-input-group">
+                    <input type="text" id="commentText" placeholder="Aggiungi un commento...">
+                    <button type="submit">Invia</button>
+                </div>
+            </form>
+            {% else %}
+            <p class="login-to-comment"><a href="{% url 'login' %}?next={{ request.path }}">Accedi</a> per commentare.</p>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

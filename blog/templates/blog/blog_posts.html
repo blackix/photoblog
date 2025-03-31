@@ -1,0 +1,128 @@
+{% extends "blog/base.html" %}
+{% load static %}
+
+{% block extra_head %}
+<style>
+    .post-card {
+        transition: transform 0.3s ease, box-shadow 0.3s ease;
+        height: 100%;
+    }
+    
+    .post-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+    }
+    
+    .post-image {
+        height: 200px;
+        object-fit: cover;
+        border-top-left-radius: 4px;
+        border-top-right-radius: 4px;
+    }
+    
+    .post-placeholder {
+        height: 200px;
+        background-color: #f8f9fa;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: #adb5bd;
+        font-size: 2rem;
+        border-top-left-radius: 4px;
+        border-top-right-radius: 4px;
+    }
+    
+    .post-title {
+        font-size: 1.25rem;
+        font-weight: 600;
+        margin-bottom: 10px;
+        display: -webkit-box;
+        -webkit-line-clamp: 2;
+        line-clamp: 2;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        height: 50px;
+    }
+    
+    .post-excerpt {
+        color: #6c757d;
+        display: -webkit-box;
+        -webkit-line-clamp: 3;
+        line-clamp: 3;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        height: 72px;
+    }
+    
+    .post-date {
+        color: #adb5bd;
+        font-size: 0.875rem;
+    }
+    
+    .blog-header {
+        padding: 30px 0;
+        text-align: center;
+        margin-bottom: 30px;
+        background-color: #f8f9fa;
+        border-radius: 4px;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="blog-header">
+        <h1>{{ settings.blog_name }}</h1>
+        <p class="lead">{{ settings.tagline }}</p>
+    </div>
+    
+    <div class="row mb-4">
+        <div class="col-md-12">
+            <div class="d-flex justify-content-between align-items-center">
+                <h2>Post del Blog</h2>
+                <div>
+                    <a href="{% url 'blog_view' username=blog_user.username %}" class="btn btn-outline-primary">Visualizza Album</a>
+                    {% if request.user == blog_user %}
+                    <a href="{% url 'post_create' %}" class="btn btn-primary ms-2">Nuovo Post</a>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="row">
+        {% if posts %}
+            {% for post in posts %}
+                <div class="col-md-4 mb-4">
+                    <div class="card post-card">
+                        {% if post.featured_image %}
+                            <img src="{{ post.featured_image.url }}" class="post-image" alt="{{ post.title }}">
+                        {% else %}
+                            <div class="post-placeholder">
+                                <i class="fas fa-file-alt"></i>
+                            </div>
+                        {% endif %}
+                        <div class="card-body">
+                            <h5 class="post-title">{{ post.title }}</h5>
+                            <p class="post-date">{{ post.created_at|date:"d/m/Y" }}</p>
+                            <p class="post-excerpt">{{ post.content|striptags|truncatewords:30 }}</p>
+                            <a href="{% url 'post_detail' username=blog_user.username slug=post.slug %}" class="btn btn-sm btn-outline-primary">Leggi di più</a>
+                        </div>
+                    </div>
+                </div>
+            {% endfor %}
+        {% else %}
+            <div class="col-md-12">
+                <div class="alert alert-info text-center">
+                    <p>Non ci sono ancora post in questo blog.</p>
+                    {% if request.user == blog_user %}
+                    <a href="{% url 'post_create' %}" class="btn btn-primary mt-2">Crea il tuo primo post</a>
+                    {% endif %}
+                </div>
+            </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

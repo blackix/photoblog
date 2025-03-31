@@ -1,0 +1,93 @@
+{% extends "blog/base.html" %}
+{% load static %}
+
+{% block extra_head %}
+<style>
+    .post-content {
+        font-family: inherit;
+        line-height: 1.6;
+    }
+    
+    .post-content img {
+        max-width: 100%;
+        height: auto;
+        border-radius: 4px;
+        margin: 15px 0;
+    }
+    
+    .post-content blockquote {
+        border-left: 3px solid #ccc;
+        padding-left: 15px;
+        margin-left: 0;
+        color: #666;
+    }
+    
+    .post-content h1, .post-content h2 {
+        margin-top: 30px;
+        margin-bottom: 15px;
+    }
+    
+    .post-content a {
+        color: #007bff;
+        text-decoration: none;
+    }
+    
+    .post-content a:hover {
+        text-decoration: underline;
+    }
+    
+    .post-featured-image {
+        width: 100%;
+        max-height: 400px;
+        object-fit: cover;
+        border-radius: 4px;
+        margin-bottom: 20px;
+    }
+    
+    .post-meta {
+        margin-bottom: 20px;
+        color: #6c757d;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row">
+        <div class="col-md-12">
+            <div class="card">
+                <div class="card-body">
+                    <h1 class="card-title">{{ post.title }}</h1>
+                    
+                    <div class="post-meta">
+                        <span>Pubblicato il: {{ post.created_at|date:"d/m/Y" }}</span>
+                        {% if post.updated_at != post.created_at %}
+                        <span> | Aggiornato il: {{ post.updated_at|date:"d/m/Y" }}</span>
+                        {% endif %}
+                        {% if request.user == post.user %}
+                        <span class="badge {% if post.published %}bg-success{% else %}bg-warning{% endif %} ms-2">
+                            {% if post.published %}Pubblicato{% else %}Bozza{% endif %}
+                        </span>
+                        {% endif %}
+                    </div>
+                    
+                    {% if post.featured_image %}
+                    <img src="{{ post.featured_image.url }}" alt="{{ post.title }}" class="post-featured-image">
+                    {% endif %}
+                    
+                    <div class="post-content">
+                        {{ post.content|safe }}
+                    </div>
+                    
+                    {% if request.user == post.user %}
+                    <div class="mt-4">
+                        <a href="{% url 'post_edit' post.slug %}" class="btn btn-primary">Modifica</a>
+                        <a href="{% url 'post_delete' post.slug %}" class="btn btn-danger ms-2">Elimina</a>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

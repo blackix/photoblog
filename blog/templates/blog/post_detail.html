@@ -1,0 +1,22 @@
+{% extends "blog/base.html" %}
+
+{% block content %}
+<div style="max-width: 800px; margin: 30px auto; padding: 20px; background-color: white; border: 1px solid #ddd;">
+    <h1 style="color: #333; margin-bottom: 10px;">{{ post.title }}</h1>
+    
+    <div style="color: #777; font-size: 14px; margin-bottom: 20px;">
+        Pubblicato da {{ post.user.username }} il {{ post.created_at|date:"d/m/Y H:i" }}
+    </div>
+    
+    <div style="line-height: 1.6; margin-top: 20px;">
+        {{ post.content|linebreaks }}
+    </div>
+    
+    {% if user.username == post.user.username %}
+    <div style="margin-top: 30px; text-align: right;">
+        <a href="{% url 'post_edit' post.slug %}" style="display: inline-block; padding: 8px 15px; background-color: #17a2b8; color: white; text-decoration: none; margin-right: 10px;">Modifica</a>
+        <a href="{% url 'post_delete' post.slug %}" style="display: inline-block; padding: 8px 15px; background-color: #dc3545; color: white; text-decoration: none;" onclick="return confirm('Sei sicuro di voler eliminare questo post?')">Elimina</a>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

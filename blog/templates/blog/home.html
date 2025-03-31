@@ -1,0 +1,32 @@
+{% extends "blog/base.html" %}
+
+{% block content %}
+<div class="container">
+    <div class="row">
+        <div class="col-12">
+            <h2 class="mb-4">Blog Pubblicati</h2>
+        </div>
+    </div>
+    
+    <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4">
+        {% for blog in blogs %}
+            <div class="col">
+                <div class="card h-100">
+                    {% if blog.site_icon %}
+                        <img src="{{ blog.site_icon.url }}" class="card-img-top" alt="{{ blog.blog_name }}" style="height: 200px; object-fit: cover;">
+                    {% endif %}
+                    <div class="card-body">
+                        <h5 class="card-title">{{ blog.blog_name }}</h5>
+                        <p class="card-text text-muted">{{ blog.tagline }}</p>
+                        <a href="{% url 'blog_view' blog.user.username %}" class="btn btn-outline-primary">Visita il Blog</a>
+                    </div>
+                </div>
+            </div>
+        {% empty %}
+            <div class="col-12">
+                <p class="text-center">Nessun blog pubblicato al momento.</p>
+            </div>
+        {% endfor %}
+    </div>
+</div>
+{% endblock %}

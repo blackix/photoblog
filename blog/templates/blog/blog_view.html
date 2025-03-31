@@ -1,0 +1,756 @@
+{% extends "blog/base.html" %}
+
+{% block content %}
+{# Add data attributes to the main container #}
+<div class="container"
+     data-get-comments-url-base="{% url 'get_photo_comments' photo_id=0 %}"
+     data-add-comment-url-base="{% url 'add_comment_photo' photo_id=0 %}"
+     data-toggle-like-url-base="{% url 'toggle_like_photo' photo_id=0 %}"
+     data-is-authenticated="{{ user.is_authenticated|yesno:'true,false' }}">
+    
+    {# Blog owner info #}
+    <h2 class="mb-4">Blog di {{ blog_owner.username }}</h2>
+    <p class="text-muted">{{ settings.tagline }}</p>
+
+    {# Display albums and their photos #}
+    <div class="albums-container">
+        {% regroup photos_data by album_title as album_list %}
+        
+        {% for album in album_list %}
+            <div class="album-section mb-5">
+                <h3 class="album-title mb-3">{{ album.grouper }}</h3>
+                <div class="album-photos">
+                    {% for photo in album.list %}
+                        <div class="photo-card" data-photo-id="{{ photo.id }}">
+                            <div class="photo-thumbnail-container">
+                                <img src="{{ photo.image_url }}" alt="{{ photo.caption|default:'Foto' }}" class="photo-thumbnail">
+                            </div>
+                            <div class="photo-info">
+                                <h5 class="photo-caption">{{ photo.caption|default:'Senza titolo' }}</h5>
+                                <div class="photo-metadata">
+                                    <span class="camera-info">{{ photo.camera_model|default:'' }}</span>
+                                </div>
+                            </div>
+                        </div>
+                    {% endfor %}
+                </div>
+            </div>
+        {% empty %}
+            <p>Questo blog non ha ancora pubblicato foto.</p>
+        {% endfor %}
+    </div>
+</div>
+
+{# Embed photos data safely #}
+{{ photos_data|json_script:"photos-data-json" }}
+
+<!-- Fullscreen Slideshow for Photos -->
+<div class="fullscreen-slideshow" id="photoDetailModal">
+    <div class="slideshow-controls">
+        <button class="btn-slideshow-prev">
+            <i class="fas fa-chevron-left"></i>
+        </button>
+        <button class="btn-slideshow-close">
+            <i class="fas fa-times"></i>
+        </button>
+        <button class="btn-slideshow-next">
+            <i class="fas fa-chevron-right"></i>
+        </button>
+    </div>
+    <div class="slideshow-slides">
+        <!-- Slides will be populated dynamically -->
+    </div>
+    
+    <!-- Photo Info Panel -->
+    <div class="slideshow-info-panel">
+        <div class="photo-metadata">
+            <span id="metadataCamera"></span>
+            <span id="metadataFocal"></span>
+            <span id="metadataExposure"></span>
+            <span id="metadataAperture"></span>
+        </div>
+        
+        <div class="photo-interactions">
+            <button id="modalLikeButton" class="btn-like" data-photo-id="">
+                <i class="fas fa-heart heart-icon"></i> <span id="modalLikeCount">0</span>
+            </button>
+            <span class="comment-count"><span id="commentCountModal">0</span> Commenti</span>
+        </div>
+        
+        <div class="photo-comments">
+            <div id="commentsListModal">
+                <p class="loading-text">Caricamento commenti...</p>
+            </div>
+            {% if user.is_authenticated %}
+            <form id="commentFormModal">
+                <div class="comment-input-group">
+                    <input type="text" id="commentTextModal" placeholder="Aggiungi un commento...">
+                    <button type="submit">Invia</button>
+                </div>
+            </form>
+            {% else %}
+            <p class="login-to-comment" style="display: none;"><a href="{% url 'login' %}?next={{ request.path }}">Accedi</a> per commentare.</p>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+
+{% block extra_css %}
+<style>
+/* Album and Photo Grid Styles */
+.albums-container {
+    margin-top: 30px;
+}
+
+.album-title {
+    font-family: 'Playfair Display', serif;
+    border-bottom: 1px solid var(--border-color);
+    padding-bottom: 10px;
+    margin-bottom: 20px;
+    color: var(--heading-color);
+}
+
+.album-photos {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    gap: 20px;
+}
+
+.photo-card {
+    background-color: var(--sidebar-bg);
+    border-radius: 8px;
+    overflow: hidden;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    transition: transform 0.2s ease;
+    cursor: pointer;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+}
+
+.photo-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+}
+
+.photo-thumbnail-container {
+    width: 100%;
+    padding-top: 100%; /* 1:1 Aspect Ratio */
+    position: relative;
+    overflow: hidden;
+    background-color: #333;
+}
+
+.photo-thumbnail {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.photo-info {
+    padding: 15px;
+    flex-grow: 1;
+    display: flex;
+    flex-direction: column;
+}
+
+.photo-caption {
+    margin: 0 0 10px 0;
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--heading-color);
+    line-height: 1.2;
+}
+
+.photo-metadata {
+    font-size: 0.8rem;
+    color: var(--text-color);
+    opacity: 0.8;
+    margin-top: auto;
+}
+
+.camera-info {
+    display: block;
+    margin-top: 5px;
+}
+
+/* Fullscreen Slideshow Styles */
+.fullscreen-slideshow {
+    position: fixed !important;
+    top: 0 !important;
+    left: 0 !important;
+    width: 100vw !important;
+    height: 100vh !important;
+    background-color: rgba(0, 0, 0, 0.95) !important;
+    z-index: 99999 !important;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    overflow: auto;
+}
+
+/* Quando il modale è visibile */
+.fullscreen-slideshow:not([style*="display: none"]) {
+    display: flex !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+}
+
+.slideshow-controls {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    padding: 20px;
+    display: flex;
+    justify-content: space-between;
+    z-index: 10000;
+}
+
+.btn-slideshow-prev, .btn-slideshow-next, .btn-slideshow-close {
+    background-color: rgba(0, 0, 0, 0.5);
+    color: white;
+    border: none;
+    border-radius: 50%;
+    width: 50px;
+    height: 50px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: background-color 0.3s;
+}
+
+.btn-slideshow-prev:hover, .btn-slideshow-next:hover, .btn-slideshow-close:hover {
+    background-color: rgba(0, 0, 0, 0.8);
+}
+
+.slideshow-slides {
+    width: 100%;
+    height: 100%;
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.slideshow-slide {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    display: none;
+    align-items: center;
+    justify-content: center;
+}
+
+.slideshow-slide.active {
+    display: flex;
+}
+
+.slideshow-slide img {
+    max-width: 90%;
+    max-height: 80%;
+    object-fit: contain;
+    max-width: 100%; /* Ensure image doesn't exceed modal width */
+    max-height: 90vh; /* Ensure image doesn't exceed viewport height */
+}
+
+.slideshow-info-panel {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    background-color: rgba(0, 0, 0, 0.7);
+    color: white;
+    padding: 15px;
+    display: flex;
+    flex-direction: column;
+    max-height: 30vh;
+}
+
+.photo-comments {
+    overflow-y: auto; /* Enable scroll for long comments */
+    max-height: 20vh;
+    padding: 0 20px;
+}
+
+/* Info Panel */
+.slideshow-info-panel {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    background-color: rgba(0, 0, 0, 0.7);
+    color: white;
+    padding: 15px;
+    display: flex;
+    flex-direction: column;
+    max-height: 30vh;
+}
+
+.photo-metadata {
+    display: flex;
+    justify-content: center;
+    margin-bottom: 10px;
+    font-size: 0.9em;
+}
+
+.photo-metadata span {
+    margin: 0 10px;
+    color: #ccc;
+}
+
+.photo-interactions {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 10px;
+    padding: 0 20px;
+}
+
+.btn-like {
+    background: none;
+    border: none;
+    color: white;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+}
+
+.btn-like .heart-icon {
+    margin-right: 5px;
+    color: #aaa;
+}
+
+.btn-like.liked .heart-icon {
+    color: #e44d4d;
+}
+
+.comment-count {
+    color: #ccc;
+    font-size: 0.9em;
+}
+
+.photo-comments {
+    overflow-y: auto;
+    max-height: 20vh;
+    padding: 0 20px;
+}
+
+#commentsListModal {
+    margin-bottom: 10px;
+}
+
+.comment-item {
+    margin-bottom: 8px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid #444;
+}
+
+.comment-author {
+    font-weight: bold;
+    margin-right: 8px;
+}
+
+.comment-date {
+    font-size: 0.8em;
+    color: #aaa;
+}
+
+.comment-input-group {
+    display: flex;
+    margin-top: 10px;
+}
+
+.comment-input-group input {
+    flex-grow: 1;
+    background-color: #333;
+    border: 1px solid #555;
+    color: white;
+    padding: 8px 12px;
+    border-radius: 4px 0 0 4px;
+}
+
+.comment-input-group button {
+    background-color: #555;
+    color: white;
+    border: none;
+    padding: 8px 15px;
+    border-radius: 0 4px 4px 0;
+    cursor: pointer;
+}
+
+.loading-text {
+    text-align: center;
+    color: #aaa;
+    font-style: italic;
+}
+
+.login-to-comment {
+    text-align: center;
+    font-size: 0.9em;
+}
+
+.login-to-comment a {
+    color: #4a9eff;
+    text-decoration: none;
+}
+</style>
+{% endblock %}
+
+
+{% block extra_js %}
+<script>
+    $(document).ready(function() {
+        // Safely parse photos data
+        let photosData = [];
+        try {
+            const photosDataJson = document.getElementById('photos-data-json').textContent;
+            photosData = JSON.parse(photosDataJson || '[]');
+        } catch (e) {
+            console.error("Error parsing photos data JSON:", e);
+        }
+        console.log('photosData:', photosData);
+
+        // Read authentication status
+        const isAuthenticated = $('.container').data('is-authenticated') === true;
+
+        let currentPhotoIndex = -1; // Initialize index
+        
+        // Create slides for all photos
+        function createSlides() {
+            const slidesContainer = $('.slideshow-slides');
+            slidesContainer.empty();
+            
+            console.log("Creating slides for photos:", photosData);
+            
+            photosData.forEach((photo, index) => {
+                // Use image.url if image_url is not available
+                const imageUrl = photo.image_url || (photo.image ? photo.image.url : '');
+                console.log(`Photo ${index}:`, photo);
+                console.log(`Image URL for photo ${index}:`, imageUrl);
+                
+                const slide = $(`
+                    <div class="slideshow-slide" data-photo-id="${photo.id}">
+                        <img src="${imageUrl}" alt="${photo.caption || 'Foto'}">
+                    </div>
+                `);
+                slidesContainer.append(slide);
+            });
+        }
+        
+        // Initialize slideshow when document is ready
+        createSlides();
+
+        // Function to show a specific photo
+        function showPhoto(photoId) {
+            console.log("showPhoto CALLED with ID:", photoId);
+            
+            const photo = photosData.find(p => p.id === photoId);
+            if (!photo) {
+                console.error("Photo data not found for ID:", photoId);
+                hideSlideshow();
+                return;
+            }
+
+            console.log("Photo data found:", photo);
+
+            // Find index for navigation
+            currentPhotoIndex = photosData.findIndex(p => p.id === photo.id);
+            if (currentPhotoIndex === -1) {
+                console.error("Could not find index for photo ID:", photo.id);
+                hideSlideshow();
+                return;
+            }
+
+            console.log("Found photo at index:", currentPhotoIndex, photo);
+
+            // Hide all slides and show the current one
+            $('.slideshow-slide').removeClass('active');
+            $(`.slideshow-slide[data-photo-id="${photoId}"]`).addClass('active');
+
+            // Show the modal directly
+            $('#photoDetailModal').show();
+
+            // Update metadata
+            $('#metadataCamera').text(`Camera: ${photo.camera_model || '-'}`);
+            $('#metadataFocal').text(`${photo.focal_length || '-'}mm`);
+            $('#metadataExposure').text(`${photo.exposure || '-'}s`);
+            $('#metadataAperture').text(`f/${photo.f_number || '-'}`);
+
+            // Update like button status and count
+            $('#modalLikeButton').data('photo-id', photoId);
+            $('#modalLikeButton').toggleClass('liked', !!photo.has_liked);
+            $('#modalLikeCount').text(photo.likes_count || 0);
+
+            // Update comment form data attribute and visibility
+            $('#commentFormModal').data('photo-id', photoId);
+            const loginPrompt = $('.login-to-comment');
+            if (!isAuthenticated) {
+                $('#commentFormModal').hide();
+                if(loginPrompt.length) loginPrompt.show();
+            } else {
+                $('#commentFormModal').show();
+                if(loginPrompt.length) loginPrompt.hide();
+            }
+
+            // Load comments
+            loadComments(photoId);
+            
+            // Check if modal is visible after showing
+            setTimeout(() => {
+                console.log("Modal display style:", $('#photoDetailModal').css('display'));
+                console.log("Modal visibility:", $('#photoDetailModal').is(':visible') ? 'visible' : 'hidden');
+                console.log("Modal dimensions:", {
+                    width: $('#photoDetailModal').width(),
+                    height: $('#photoDetailModal').height(),
+                    offsetWidth: $('#photoDetailModal')[0].offsetWidth,
+                    offsetHeight: $('#photoDetailModal')[0].offsetHeight
+                });
+            }, 100);
+        }
+        
+        // Function to hide slideshow
+        function hideSlideshow() {
+            console.log("hideSlideshow called");
+            $('#photoDetailModal').hide();
+        }
+
+        // Click listener for photo cards
+        $('.photo-card').click(function() {
+            console.log("Photo card clicked");
+            const photoId = $(this).data('photo-id');
+            console.log("Clicked photo card photoId:", photoId);
+            if (photoId && photosData.length > 0) {
+                console.log("photosData is valid, calling showPhoto");
+                showPhoto(photoId);
+            } else if (photosData.length === 0) {
+                console.warn("No photo data available to display");
+                console.log("photosData:", photosData);
+            }
+        });
+
+        // Slideshow navigation
+        $('.btn-slideshow-prev').click(function() {
+            if (currentPhotoIndex > 0) {
+                const prevPhotoId = photosData[currentPhotoIndex - 1].id;
+                showPhoto(prevPhotoId);
+            }
+        });
+        
+        $('.btn-slideshow-next').click(function() {
+            if (currentPhotoIndex < photosData.length - 1) {
+                const nextPhotoId = photosData[currentPhotoIndex + 1].id;
+                showPhoto(nextPhotoId);
+            }
+        });
+        
+        $('.btn-slideshow-close').click(hideSlideshow);
+
+        // Function to load comments
+        function loadComments(photoId) {
+            console.log("Loading comments for photo ID:", photoId);
+            
+            const commentsContainer = $('#commentsListModal');
+            commentsContainer.html('<p class="loading-text">Caricamento commenti...</p>');
+            
+            // Get the base URL and replace the placeholder
+            let commentsUrl = $('.container').data('get-comments-url-base');
+            if (!commentsUrl) {
+                console.error("Comments URL base not found in data attribute");
+                commentsContainer.html('<p class="text-danger">Errore nel caricamento dei commenti</p>');
+                return;
+            }
+            
+            // Replace the placeholder (0) with the actual photo ID
+            commentsUrl = commentsUrl.replace('/photo/0/', `/photo/${photoId}/`);
+            console.log("Comments URL:", commentsUrl);
+            
+            $.ajax({
+                url: commentsUrl,
+                type: 'GET',
+                dataType: 'json',
+                success: function(response) {
+                    console.log("Comments response:", response);
+                    
+                    if (!response.comments || !Array.isArray(response.comments)) {
+                        commentsContainer.html('<p>Nessun commento</p>');
+                        $('#commentCountModal').text(0);
+                        return;
+                    }
+                    
+                    const comments = response.comments;
+                    $('#commentCountModal').text(comments.length);
+                    
+                    if (comments.length === 0) {
+                        commentsContainer.html('<p>Nessun commento</p>');
+                        return;
+                    }
+                    
+                    let commentsHtml = '';
+                    comments.forEach(comment => {
+                        const deleteButton = isAuthenticated && (comment.is_owner || comment.can_delete) ? 
+                            `<button class="delete-comment" data-comment-id="${comment.id}"><i class="fas fa-times"></i></button>` : '';
+                        
+                        commentsHtml += `
+                            <div class="comment-item" data-comment-id="${comment.id}">
+                                <div class="d-flex justify-content-between">
+                                    <div>
+                                        <span class="comment-author">${comment.author_name}</span>
+                                        <span class="comment-date">${comment.created_at}</span>
+                                    </div>
+                                    ${deleteButton}
+                                </div>
+                                <p class="mb-0">${comment.text}</p>
+                            </div>
+                        `;
+                    });
+                    
+                    commentsContainer.html(commentsHtml);
+                },
+                error: function(xhr) {
+                    console.error("Error loading comments:", xhr);
+                    commentsContainer.html('<p class="text-danger">Errore nel caricamento dei commenti</p>');
+                }
+            });
+        }
+
+        // Submit comment form
+        $('#commentFormModal').submit(function(e) {
+            e.preventDefault();
+            if (!isAuthenticated) return;
+            
+            const photoId = $(this).data('photo-id');
+            const commentText = $('#commentTextModal').val().trim();
+            
+            if (!commentText) return;
+            
+            // Get the base URL and replace the placeholder
+            let addCommentUrl = $('.container').data('add-comment-url-base');
+            if (!addCommentUrl) {
+                console.error("Add comment URL base not found in data attribute");
+                return;
+            }
+            
+            // Replace the placeholder (0) with the actual photo ID
+            addCommentUrl = addCommentUrl.replace('/photo/0/', `/photo/${photoId}/`);
+            
+            $.ajax({
+                url: addCommentUrl,
+                type: 'POST',
+                dataType: 'json',
+                data: {
+                    text: commentText,
+                    csrfmiddlewaretoken: $('meta[name="csrf-token"]').attr('content')
+                },
+                success: function(response) {
+                    $('#commentTextModal').val('');
+                    loadComments(photoId);
+                },
+                error: function(xhr) {
+                    console.error("Error adding comment:", xhr);
+                    alert("Errore nell'aggiunta del commento");
+                }
+            });
+        });
+
+        // Delete comment handler
+        $('#commentsListModal').on('click', '.delete-comment', function() {
+            if (!isAuthenticated) return;
+            
+            const commentId = $(this).data('comment-id');
+            const photoId = $('#modalLikeButton').data('photo-id');
+            
+            if (!commentId || !photoId) return;
+            
+            if (!confirm("Sei sicuro di voler eliminare questo commento?")) return;
+            
+            $.ajax({
+                url: `/comment/${commentId}/delete/`,
+                type: 'POST',
+                dataType: 'json',
+                data: {
+                    csrfmiddlewaretoken: $('meta[name="csrf-token"]').attr('content')
+                },
+                success: function(response) {
+                    if (response.success) {
+                        $(`.comment-item[data-comment-id="${commentId}"]`).fadeOut(300, function() {
+                            $(this).remove();
+                            
+                            // Update count
+                            const currentCount = parseInt($('#commentCountModal').text()) || 0;
+                            $('#commentCountModal').text(Math.max(0, currentCount - 1));
+                            
+                            // Show "no comments" message if needed
+                            if ($('#commentsListModal .comment-item').length === 0) {
+                                $('#commentsListModal').html('<p>Nessun commento</p>');
+                            }
+                        });
+                    } else {
+                        alert(response.error || "Errore nell'eliminazione del commento");
+                    }
+                },
+                error: function(xhr) {
+                    console.error("Error deleting comment:", xhr);
+                    alert("Errore nell'eliminazione del commento");
+                }
+            });
+        });
+
+        // Like button handler
+        $('#modalLikeButton').click(function() {
+            if (!isAuthenticated) return;
+            
+            const photoId = $(this).data('photo-id');
+            if (!photoId) return;
+            
+            // Get the base URL and replace the placeholder
+            let toggleLikeUrl = $('.container').data('toggle-like-url-base');
+            if (!toggleLikeUrl) {
+                console.error("Toggle like URL base not found in data attribute");
+                return;
+            }
+            
+            // Replace the placeholder (0) with the actual photo ID
+            toggleLikeUrl = toggleLikeUrl.replace('/photo/0/', `/photo/${photoId}/`);
+            
+            $.ajax({
+                url: toggleLikeUrl,
+                type: 'POST',
+                dataType: 'json',
+                data: {
+                    csrfmiddlewaretoken: $('meta[name="csrf-token"]').attr('content')
+                },
+                success: function(response) {
+                    if (response.success) {
+                        // Update button state
+                        const likeButton = $('#modalLikeButton');
+                        likeButton.toggleClass('liked', response.liked);
+                        
+                        // Update count
+                        $('#modalLikeCount').text(response.likes_count || 0);
+                        
+                        // Update the photo data
+                        const photoIndex = photosData.findIndex(p => p.id === photoId);
+                        if (photoIndex !== -1) {
+                            photosData[photoIndex].has_liked = response.liked;
+                            photosData[photoIndex].likes_count = response.likes_count;
+                        }
+                    }
+                },
+                error: function(xhr) {
+                    console.error("Error toggling like:", xhr);
+                }
+            });
+        });
+
+    }); // End document ready
+</script>
+{% endblock %}

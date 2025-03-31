@@ -1,0 +1,135 @@
+{% extends "blog/base.html" %}
+{% load static %}
+
+{% block title %}Esplora i Blog{% endblock %}
+
+{% block extra_head %}
+<style>
+    .blog-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+        gap: 20px;
+        margin-top: 20px;
+    }
+    
+    .blog-card {
+        background-color: var(--sidebar-bg);
+        border-radius: 8px;
+        overflow: hidden;
+        box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        transition: transform 0.3s ease, box-shadow 0.3s ease;
+        display: flex;
+        flex-direction: row;
+        height: 150px;
+    }
+    
+    .blog-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+    }
+    
+    .blog-icon {
+        width: 150px;
+        height: 150px;
+        background-color: var(--bg-color);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        overflow: hidden;
+    }
+    
+    .blog-icon img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+    }
+    
+    .blog-icon-placeholder {
+        width: 80px;
+        height: 80px;
+        background-color: var(--accent-color);
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-size: 2rem;
+    }
+    
+    .blog-info {
+        padding: 15px;
+        flex-grow: 1;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+    }
+    
+    .blog-title {
+        font-size: 1.2rem;
+        font-weight: 600;
+        margin-bottom: 5px;
+        color: var(--heading-color);
+    }
+    
+    .blog-tagline {
+        font-size: 0.9rem;
+        color: var(--text-color);
+        opacity: 0.8;
+        margin-bottom: 10px;
+        display: -webkit-box;
+        -webkit-line-clamp: 2;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+    }
+    
+    .blog-author {
+        font-size: 0.85rem;
+        color: var(--accent-color);
+    }
+    
+    .page-header {
+        background-color: var(--sidebar-bg);
+        padding: 20px;
+        border-radius: 8px;
+        margin-bottom: 20px;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="page-header">
+        <h1>Esplora i Blog</h1>
+        <p class="text-muted">Scopri i blog fotografici creati dagli altri utenti</p>
+    </div>
+    
+    <div class="blog-grid">
+        {% for blog in published_blogs %}
+            <a href="{% url 'blog_view' username=blog.user.username %}" class="text-decoration-none">
+                <div class="blog-card">
+                    <div class="blog-icon">
+                        {% if blog.site_icon %}
+                            <img src="{{ blog.site_icon.url }}" alt="{{ blog.blog_name }}">
+                        {% else %}
+                            <div class="blog-icon-placeholder">
+                                <i class="fas fa-camera"></i>
+                            </div>
+                        {% endif %}
+                    </div>
+                    <div class="blog-info">
+                        <h3 class="blog-title">{{ blog.blog_name }}</h3>
+                        {% if blog.tagline %}
+                            <p class="blog-tagline">{{ blog.tagline }}</p>
+                        {% endif %}
+                        <p class="blog-author">di {{ blog.user.username }}</p>
+                    </div>
+                </div>
+            </a>
+        {% empty %}
+            <div class="alert alert-info">
+                Non ci sono ancora blog pubblicati da esplorare.
+            </div>
+        {% endfor %}
+    </div>
+</div>
+{% endblock %}

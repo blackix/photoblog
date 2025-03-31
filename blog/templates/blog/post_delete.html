@@ -1,0 +1,17 @@
+{% extends "blog/base.html" %}
+
+{% block content %}
+<div style="max-width: 500px; margin: 100px auto; padding: 20px; background-color: white; border: 1px solid #ddd; text-align: center;">
+    <h2 style="color: #dc3545; margin-bottom: 20px;">Eliminare il post?</h2>
+    
+    <p style="margin-bottom: 20px;">Stai per eliminare il post "<strong>{{ post.title }}</strong>".<br>Questa azione non può essere annullata.</p>
+    
+    <form method="post">
+        {% csrf_token %}
+        <div style="margin-top: 30px;">
+            <a href="{% url 'post_detail' username=post.user.username slug=post.slug %}" style="display: inline-block; padding: 8px 15px; background-color: #6c757d; color: white; text-decoration: none; margin-right: 10px;">Annulla</a>
+            <button type="submit" style="padding: 8px 15px; background-color: #dc3545; color: white; border: none; cursor: pointer;">Conferma eliminazione</button>
+        </div>
+    </form>
+</div>
+{% endblock %}

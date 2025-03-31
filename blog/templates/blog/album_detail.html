@@ -1,0 +1,579 @@
+{% extends "blog/base.html" %}
+
+{% block content %}
+<div class="container">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2>{{ album.title }}</h2>
+        <button class="btn btn-danger delete-album" data-album-id="{{ album.id }}" title="Elimina Album">
+            <i class="fas fa-trash"></i>
+        </button>
+    </div>
+    <p class="text-muted">{{ album.description }}</p>
+    
+    <div class="card mb-4">
+        <div class="card-body">
+            <h5 class="card-title">Carica Foto</h5>
+            <div id="dropzone" class="dropzone">
+                <i class="fas fa-cloud-upload-alt fa-3x mb-3"></i>
+                <p>Trascina qui le foto o clicca per selezionarle</p>
+                <input type="file" id="fileInput" multiple style="display: none;" accept="image/*">
+                <div id="upload-progress" class="progress mt-3" style="display: none;">
+                    <div class="progress-bar" role="progressbar" style="width: 0%"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Selettori di layout -->
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <div class="btn-group" role="group" aria-label="Layout selectors">
+            <button type="button" class="btn btn-outline-primary layout-selector active" data-layout="grid">
+                <i class="fas fa-th"></i> Griglia
+            </button>
+            <button type="button" class="btn btn-outline-primary layout-selector" data-layout="list">
+                <i class="fas fa-list"></i> Lista
+            </button>
+            <button type="button" class="btn btn-outline-primary layout-selector" data-layout="slideshow">
+                <i class="fas fa-images"></i> Slideshow
+            </button>
+        </div>
+        <div class="text-muted">
+            {{ photos.count }} foto
+        </div>
+    </div>
+
+    <!-- Layout Griglia -->
+    <div class="photo-container">
+        <div class="photo-grid active-layout" id="grid-layout" style="background-color: #333; padding: 20px;">
+            {% for photo in photos %}
+                <div class="photo-item" data-photo-id="{{ photo.id }}">
+                    <div class="d-flex justify-content-end mb-2">
+                        <button class="btn btn-sm btn-outline-danger delete-photo" title="Elimina foto">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    </div>
+                    <div class="photo-frame">
+                        <img src="{{ photo.image.url }}" alt="Photo" class="img-fluid photo-thumbnail" style="cursor: pointer;" data-photo-id="{{ photo.id }}">
+                    </div>
+                    <div class="mt-3">
+                        <div class="mb-3">
+                            <input type="text" class="form-control photo-caption" placeholder="Titolo foto..." value="{{ photo.caption|default:'' }}">
+                        </div>
+                        <div class="mb-3">
+                            <textarea class="form-control photo-description" placeholder="Descrizione foto...">{{ photo.description|default:'' }}</textarea>
+                        </div>
+                        <button class="btn btn-sm btn-outline-info mb-2 toggle-metadata" type="button">
+                            <i class="fas fa-info-circle"></i> Mostra Metadati
+                        </button>
+                        <div class="metadata-container" style="display: none;">
+                            <div class="card">
+                                <div class="card-body">
+                                    <h6 class="card-subtitle mb-2 text-muted">Metadati EXIF</h6>
+                                    <dl class="row mb-0">
+                                        <dt class="col-sm-3">Data</dt>
+                                        <dd class="col-sm-9 metadata-date">Caricamento...</dd>
+                                        
+                                        <dt class="col-sm-3">Fotocamera</dt>
+                                        <dd class="col-sm-9 metadata-camera">Caricamento...</dd>
+                                        
+                                        <dt class="col-sm-3">Obiettivo</dt>
+                                        <dd class="col-sm-9 metadata-lens">Caricamento...</dd>
+                                        
+                                        <dt class="col-sm-3">Impostazioni</dt>
+                                        <dd class="col-sm-9 metadata-settings">Caricamento...</dd>
+                                        
+                                        <dt class="col-sm-3">Posizione</dt>
+                                        <dd class="col-sm-9 metadata-location">Caricamento...</dd>
+                                    </dl>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+        
+        <!-- Layout Lista -->
+        <div class="photo-list" id="list-layout" style="display: none;">
+            {% for photo in photos %}
+                <div class="card mb-4 photo-list-item" data-photo-id="{{ photo.id }}">
+                    <div class="row g-0">
+                        <div class="col-md-4">
+                            <img src="{{ photo.image.url }}" alt="Photo" class="img-fluid photo-thumbnail" style="cursor: pointer;" data-photo-id="{{ photo.id }}">
+                        </div>
+                        <div class="col-md-8">
+                            <div class="card-body">
+                                <div class="d-flex justify-content-between">
+                                    <h5 class="card-title">{{ photo.caption|default:'Senza titolo' }}</h5>
+                                    <button class="btn btn-sm btn-outline-danger delete-photo" title="Elimina foto">
+                                        <i class="fas fa-times"></i>
+                                    </button>
+                                </div>
+                                <div class="mb-3">
+                                    <input type="text" class="form-control photo-caption" placeholder="Titolo foto..." value="{{ photo.caption|default:'' }}">
+                                </div>
+                                <div class="mb-3">
+                                    <textarea class="form-control photo-description" placeholder="Descrizione foto...">{{ photo.description|default:'' }}</textarea>
+                                </div>
+                                <button class="btn btn-sm btn-outline-info mb-2 toggle-metadata" type="button">
+                                    <i class="fas fa-info-circle"></i> Mostra Metadati
+                                </button>
+                                <div class="metadata-container" style="display: none;">
+                                    <div class="card">
+                                        <div class="card-body">
+                                            <h6 class="card-subtitle mb-2 text-muted">Metadati EXIF</h6>
+                                            <dl class="row mb-0">
+                                                <dt class="col-sm-3">Data</dt>
+                                                <dd class="col-sm-9 metadata-date">Caricamento...</dd>
+                                                
+                                                <dt class="col-sm-3">Fotocamera</dt>
+                                                <dd class="col-sm-9 metadata-camera">Caricamento...</dd>
+                                                
+                                                <dt class="col-sm-3">Obiettivo</dt>
+                                                <dd class="col-sm-9 metadata-lens">Caricamento...</dd>
+                                                
+                                                <dt class="col-sm-3">Impostazioni</dt>
+                                                <dd class="col-sm-9 metadata-settings">Caricamento...</dd>
+                                                
+                                                <dt class="col-sm-3">Posizione</dt>
+                                                <dd class="col-sm-9 metadata-location">Caricamento...</dd>
+                                            </dl>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+        
+        <!-- Layout Slideshow a schermo intero -->
+        <div class="fullscreen-slideshow" id="slideshow-layout" style="display: none;">
+            <div class="slideshow-controls">
+                <button class="btn btn-slideshow-prev">
+                    <i class="fas fa-chevron-left"></i>
+                </button>
+                <button class="btn btn-slideshow-close">
+                    <i class="fas fa-times"></i>
+                </button>
+                <button class="btn btn-slideshow-next">
+                    <i class="fas fa-chevron-right"></i>
+                </button>
+            </div>
+            <div class="slideshow-slides">
+                {% for photo in photos %}
+                    <div class="slideshow-slide" data-photo-id="{{ photo.id }}">
+                        <img src="{{ photo.image.url }}" alt="{{ photo.caption|default:'Photo' }}">
+                        <div class="slideshow-caption">
+                            <h3>{{ photo.caption|default:'Senza titolo' }}</h3>
+                            <p>{{ photo.description|default:'' }}</p>
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .photo-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+        gap: 20px;
+        background-color: #333;
+        padding: 20px;
+    }
+    
+    .photo-item {
+        background-color: #444;
+        border-radius: 8px;
+        padding: 15px;
+        box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    }
+    
+    .photo-frame {
+        width: 100%;
+        height: 200px;
+        overflow: hidden;
+        border-radius: 4px;
+    }
+    
+    .photo-frame img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+    }
+    
+    /* Stili per il layout slideshow a schermo intero */
+    .fullscreen-slideshow {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(0, 0, 0, 0.9);
+        z-index: 9999;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+    
+    .slideshow-controls {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        padding: 20px;
+        display: flex;
+        justify-content: space-between;
+        z-index: 10000;
+    }
+    
+    .btn-slideshow-prev, .btn-slideshow-next, .btn-slideshow-close {
+        background-color: rgba(0, 0, 0, 0.5);
+        color: white;
+        border: none;
+        border-radius: 50%;
+        width: 50px;
+        height: 50px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        transition: background-color 0.3s;
+    }
+    
+    .btn-slideshow-prev:hover, .btn-slideshow-next:hover, .btn-slideshow-close:hover {
+        background-color: rgba(0, 0, 0, 0.8);
+    }
+    
+    .slideshow-slides {
+        width: 100%;
+        height: 100%;
+        position: relative;
+    }
+    
+    .slideshow-slide {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        display: none;
+        align-items: center;
+        justify-content: center;
+    }
+    
+    .slideshow-slide.active {
+        display: flex;
+    }
+    
+    .slideshow-slide img {
+        max-width: 90%;
+        max-height: 80%;
+        object-fit: contain;
+    }
+    
+    .slideshow-caption {
+        position: absolute;
+        bottom: 0;
+        left: 0;
+        width: 100%;
+        background-color: rgba(0, 0, 0, 0.7);
+        color: white;
+        padding: 15px;
+    }
+</style>
+
+{% block extra_js %}
+<script>
+    $(document).ready(function() {
+        // Dropzone functionality
+        const dropzone = $('#dropzone');
+        const fileInput = $('#fileInput');
+        
+        dropzone.on('click', function() {
+            fileInput.click();
+        });
+        
+        dropzone.on('dragover', function(e) {
+            e.preventDefault();
+            dropzone.addClass('dragover');
+        });
+        
+        dropzone.on('dragleave', function() {
+            dropzone.removeClass('dragover');
+        });
+        
+        dropzone.on('drop', function(e) {
+            e.preventDefault();
+            dropzone.removeClass('dragover');
+            
+            if (e.originalEvent.dataTransfer.files.length) {
+                handleFiles(e.originalEvent.dataTransfer.files);
+            }
+        });
+        
+        fileInput.on('change', function() {
+            if (this.files.length) {
+                handleFiles(this.files);
+            }
+        });
+        
+        function handleFiles(files) {
+            const formData = new FormData();
+            
+            for (let i = 0; i < files.length; i++) {
+                formData.append('photos', files[i]);
+            }
+            
+            uploadPhotos(formData);
+        }
+        
+        function uploadPhotos(formData) {
+            const progressBar = $('#upload-progress');
+            const progressBarInner = progressBar.find('.progress-bar');
+            
+            progressBar.show();
+            progressBarInner.width('0%');
+            
+            $.ajax({
+                url: '{% url "upload_photos" album.id %}',
+                type: 'POST',
+                data: formData,
+                processData: false,
+                contentType: false,
+                headers: {
+                    'X-CSRFToken': '{{ csrf_token }}'
+                },
+                xhr: function() {
+                    const xhr = new window.XMLHttpRequest();
+                    xhr.upload.addEventListener('progress', function(e) {
+                        if (e.lengthComputable) {
+                            const percent = Math.round((e.loaded / e.total) * 100);
+                            progressBarInner.width(percent + '%');
+                            progressBarInner.text(percent + '%');
+                        }
+                    });
+                    return xhr;
+                },
+                success: function(response) {
+                    progressBarInner.text('Caricamento completato!');
+                    setTimeout(function() {
+                        location.reload();
+                    }, 1000);
+                },
+                error: function(xhr, status, error) {
+                    progressBar.removeClass('bg-info').addClass('bg-danger');
+                    progressBarInner.text('Errore durante il caricamento');
+                    console.error(error);
+                }
+            });
+        }
+        
+        // Delete photo
+        $('.delete-photo').on('click', function(e) {
+            e.stopPropagation();
+            const photoId = $(this).closest('[data-photo-id]').data('photo-id');
+            
+            if (confirm('Sei sicuro di voler eliminare questa foto?')) {
+                $.ajax({
+                    url: `/photo/${photoId}/delete/`,
+                    type: 'POST',
+                    headers: {
+                        'X-CSRFToken': '{{ csrf_token }}'
+                    },
+                    success: function() {
+                        $(`[data-photo-id="${photoId}"]`).fadeOut(function() {
+                            $(this).remove();
+                        });
+                    },
+                    error: function(xhr, status, error) {
+                        alert('Errore durante l\'eliminazione della foto');
+                        console.error(error);
+                    }
+                });
+            }
+        });
+        
+        // Delete album
+        $('.delete-album').on('click', function() {
+            const albumId = $(this).data('album-id');
+            
+            if (confirm('Sei sicuro di voler eliminare questo album e tutte le sue foto?')) {
+                $.ajax({
+                    url: `/album/${albumId}/delete/`,
+                    type: 'POST',
+                    headers: {
+                        'X-CSRFToken': '{{ csrf_token }}'
+                    },
+                    success: function() {
+                        window.location.href = '/dashboard/';
+                    },
+                    error: function(xhr, status, error) {
+                        alert('Errore durante l\'eliminazione dell\'album');
+                        console.error(error);
+                    }
+                });
+            }
+        });
+        
+        // Update photo caption and description
+        $('.photo-caption, .photo-description').on('change', function() {
+            const photoItem = $(this).closest('[data-photo-id]');
+            const photoId = photoItem.data('photo-id');
+            const caption = photoItem.find('.photo-caption').val();
+            const description = photoItem.find('.photo-description').val();
+            
+            $.ajax({
+                url: `/photo/${photoId}/update/`,
+                type: 'POST',
+                data: JSON.stringify({ // Convert data to JSON string
+                    caption: caption,
+                    description: description
+                }),
+                contentType: 'application/json', // Set content type to JSON
+                headers: {
+                    'X-CSRFToken': '{{ csrf_token }}'
+                },
+                success: function() {
+                    // Aggiorna la didascalia nella slideshow se visibile
+                    $(`.slideshow-slide[data-photo-id="${photoId}"] .slideshow-caption h3`).text(caption || 'Senza titolo');
+                    $(`.slideshow-slide[data-photo-id="${photoId}"] .slideshow-caption p`).text(description || '');
+                },
+                error: function(xhr, status, error) {
+                    alert('Errore durante l\'aggiornamento della foto');
+                    console.error(error);
+                }
+            });
+        });
+        
+        // Toggle metadata
+        $('.toggle-metadata').on('click', function() {
+            const metadataContainer = $(this).next('.metadata-container');
+            metadataContainer.slideToggle();
+            
+            if (metadataContainer.is(':visible')) {
+                $(this).html('<i class="fas fa-info-circle"></i> Nascondi Metadati');
+                
+                const photoId = $(this).closest('[data-photo-id]').data('photo-id');
+                const metadataElements = {
+                    date: metadataContainer.find('.metadata-date'),
+                    camera: metadataContainer.find('.metadata-camera'),
+                    lens: metadataContainer.find('.metadata-lens'),
+                    settings: metadataContainer.find('.metadata-settings'),
+                    location: metadataContainer.find('.metadata-location')
+                };
+                
+                // Fetch metadata
+                $.ajax({
+                    url: `/api/photo/${photoId}/metadata/`,
+                    type: 'GET',
+                    success: function(data) {
+                        metadataElements.date.text(data.date || 'Non disponibile');
+                        metadataElements.camera.text(data.camera || 'Non disponibile');
+                        metadataElements.lens.text(data.lens || 'Non disponibile');
+                        metadataElements.settings.text(data.settings || 'Non disponibile');
+                        metadataElements.location.text(data.location || 'Non disponibile');
+                    },
+                    error: function() {
+                        for (const key in metadataElements) {
+                            metadataElements[key].text('Errore nel caricamento');
+                        }
+                    }
+                });
+            } else {
+                $(this).html('<i class="fas fa-info-circle"></i> Mostra Metadati');
+            }
+        });
+        
+        // Layout selectors
+        $('.layout-selector').on('click', function() {
+            const layout = $(this).data('layout');
+            $('.layout-selector').removeClass('active');
+            $(this).addClass('active');
+            
+            // Nascondi tutti i layout
+            $('#grid-layout, #list-layout, #slideshow-layout').hide();
+            
+            // Mostra il layout selezionato
+            if (layout === 'grid') {
+                $('#grid-layout').show();
+            } else if (layout === 'list') {
+                $('#list-layout').show();
+            } else if (layout === 'slideshow') {
+                $('#slideshow-layout').show();
+                initializeSlideshow();
+            }
+        });
+        
+        // Funzioni per lo slideshow
+        function initializeSlideshow() {
+            // Mostra la prima slide
+            $('.slideshow-slide').first().addClass('active');
+            
+            // Gestione dei controlli
+            $('.btn-slideshow-prev').off('click').on('click', function() {
+                navigateSlideshow('prev');
+            });
+            
+            $('.btn-slideshow-next').off('click').on('click', function() {
+                navigateSlideshow('next');
+            });
+            
+            $('.btn-slideshow-close').off('click').on('click', function() {
+                // Chiudi lo slideshow e torna alla vista precedente
+                $('#slideshow-layout').hide();
+                $('.layout-selector[data-layout="grid"]').click();
+            });
+            
+            // Gestione dei tasti freccia
+            $(document).off('keydown.slideshow').on('keydown.slideshow', function(e) {
+                if ($('#slideshow-layout').is(':visible')) {
+                    if (e.key === 'ArrowLeft') {
+                        navigateSlideshow('prev');
+                    } else if (e.key === 'ArrowRight') {
+                        navigateSlideshow('next');
+                    } else if (e.key === 'Escape') {
+                        $('.btn-slideshow-close').click();
+                    }
+                }
+            });
+        }
+        
+        function navigateSlideshow(direction) {
+            const currentSlide = $('.slideshow-slide.active');
+            let nextSlide;
+            
+            if (direction === 'prev') {
+                nextSlide = currentSlide.prev('.slideshow-slide');
+                if (nextSlide.length === 0) {
+                    nextSlide = $('.slideshow-slide').last();
+                }
+            } else {
+                nextSlide = currentSlide.next('.slideshow-slide');
+                if (nextSlide.length === 0) {
+                    nextSlide = $('.slideshow-slide').first();
+                }
+            }
+            
+            currentSlide.removeClass('active');
+            nextSlide.addClass('active');
+        }
+        
+        // Apri lo slideshow quando si clicca su un'immagine
+        $('.photo-thumbnail').on('click', function() {
+            const photoId = $(this).data('photo-id');
+            
+            // Attiva il layout slideshow
+            $('.layout-selector[data-layout="slideshow"]').click();
+            
+            // Mostra la slide corretta
+            $('.slideshow-slide').removeClass('active');
+            $(`.slideshow-slide[data-photo-id="${photoId}"]`).addClass('active');
+        });
+    });
+</script>
+{% endblock %}
+{% endblock %}

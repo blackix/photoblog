@@ -1,0 +1,30 @@
+{% extends "blog/base.html" %}
+
+{% block content %}
+<div style="width: 400px; margin: 100px auto; padding: 20px; border: 1px solid #ddd; background-color: white;">
+    <h2 style="color: #17a2b8; margin-bottom: 20px; text-align: center;">Modifica Post</h2>
+    
+    <form method="post">
+        {% csrf_token %}
+        
+        <div style="margin-bottom: 15px;">
+            <input type="text" name="title" placeholder="Titolo" value="{{ post.title }}"
+                   style="width: 100%; padding: 8px; border: 2px solid #17a2b8;">
+        </div>
+        
+        <div style="margin-bottom: 15px;">
+            <textarea name="content" placeholder="Contenuto del post..." 
+                      style="width: 100%; height: 200px; padding: 8px; border: 2px solid #ff47a3;">{{ post.content }}</textarea>
+        </div>
+        
+        <div>
+            <button type="submit" style="width: 100%; padding: 10px; background-color: #17a2b8; color: white; 
+                                         border: none; font-weight: bold;">SALVA MODIFICHE</button>
+        </div>
+        
+        <div style="margin-top: 15px; text-align: center;">
+            <a href="{% url 'post_detail' username=post.user.username slug=post.slug %}" style="color: #6c757d; text-decoration: none;">Annulla e torna al post</a>
+        </div>
+    </form>
+</div>
+{% endblock %}

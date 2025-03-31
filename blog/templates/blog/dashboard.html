@@ -1,0 +1,78 @@
+{% extends "blog/base.html" %}
+
+{% block content %}
+<div class="container">
+    {% if show_welcome %}
+    <div class="alert alert-info">
+        <h4>Benvenuto nel tuo nuovo Photo Blog!</h4>
+        <p>Per iniziare:</p>
+        <ol>
+            <li>Vai nelle <a href="{% url 'settings' %}">Impostazioni</a> per personalizzare il tuo blog</li>
+            <li>Crea il tuo primo album</li>
+            <li>Carica le tue foto</li>
+            <li>Quando sei pronto, pubblica il tuo blog dalle impostazioni</li>
+        </ol>
+    </div>
+    {% endif %}
+    
+    <div class="row mb-4">
+        <div class="col-md-12">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">Stato del Blog</h5>
+                    <p class="card-text">
+                        Il tuo blog è attualmente 
+                        {% if settings.is_published %}
+                            <span class="badge bg-success">Pubblicato</span>
+                            <a href="{% url 'blog_view' username=user.username %}" class="btn btn-sm btn-outline-primary ms-2">Visualizza Blog</a>
+                            <br>
+                            <small class="text-muted">Il tuo blog è accessibile all'indirizzo: /blog/{{ user.username }}</small>
+                        {% else %}
+                            <span class="badge bg-warning">Non Pubblicato</span>
+                            <br>
+                            <small class="text-muted">Vai nelle <a href="{% url 'settings' %}">impostazioni</a> per pubblicare il tuo blog</small>
+                        {% endif %}
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-md-12">
+            <div class="card">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <h5 class="card-title">I tuoi Album</h5>
+                        <a href="{% url 'album_create' %}" class="btn btn-primary">Nuovo Album</a>
+                    </div>
+                    
+                    {% if albums %}
+                        <div class="row">
+                            {% for album in albums %}
+                                <div class="col-md-4 mb-3">
+                                    <div class="card h-100">
+                                        <div class="card-body">
+                                            <h5 class="card-title">{{ album.title }}</h5>
+                                            <p class="card-text">{{ album.description|truncatewords:20 }}</p>
+                                            <p class="card-text">
+                                                <small class="text-muted">{{ album.photos.count }} foto</small>
+                                            </p>
+                                            <a href="{% url 'album_detail' album.pk %}" class="btn btn-primary">Gestisci Album</a>
+                                        </div>
+                                    </div>
+                                </div>
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        <div class="text-center py-5">
+                            <p class="mb-3">Non hai ancora creato nessun album.</p>
+                            <a href="{% url 'album_create' %}" class="btn btn-primary">Crea il tuo primo album</a>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

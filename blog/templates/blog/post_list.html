@@ -1,0 +1,68 @@
+{% extends "blog/base.html" %}
+
+{% block content %}
+<div class="container">
+    <div class="row mb-4">
+        <div class="col-md-12">
+            <div class="card">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <h2 class="card-title">I tuoi Post</h2>
+                        <a href="{% url 'post_create' %}" class="btn">Nuovo Post</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-md-12">
+            {% if posts %}
+                {% for post in posts %}
+                    <div class="card mb-4">
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between align-items-center mb-3">
+                                <h3 class="card-title">{{ post.title }}</h3>
+                                <span class="badge {% if post.published %}bg-success{% else %}bg-warning{% endif %}">
+                                    {% if post.published %}Pubblicato{% else %}Bozza{% endif %}
+                                </span>
+                            </div>
+                            
+                            <div class="row">
+                                {% if post.featured_image %}
+                                <div class="col-md-3">
+                                    <img src="{{ post.featured_image.url }}" alt="{{ post.title }}" class="img-fluid rounded">
+                                </div>
+                                <div class="col-md-9">
+                                {% else %}
+                                <div class="col-md-12">
+                                {% endif %}
+                                    <p class="card-text">{{ post.content|striptags|truncatewords:50 }}</p>
+                                    <p class="text-muted">
+                                        <small>Creato il: {{ post.created_at|date:"d/m/Y H:i" }}</small>
+                                        {% if post.updated_at != post.created_at %}
+                                        <small> | Aggiornato il: {{ post.updated_at|date:"d/m/Y H:i" }}</small>
+                                        {% endif %}
+                                    </p>
+                                    <div class="d-flex">
+                                        <a href="{% url 'post_edit' post.slug %}" class="btn btn-sm me-2">Modifica</a>
+                                        <a href="{% url 'post_delete' post.slug %}" class="btn btn-sm me-2">Elimina</a>
+                                        <a href="{% url 'post_detail' username=user.username slug=post.slug %}" class="btn btn-sm">Visualizza</a>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                {% endfor %}
+            {% else %}
+                <div class="card">
+                    <div class="card-body text-center">
+                        <p>Non hai ancora creato nessun post.</p>
+                        <a href="{% url 'post_create' %}" class="btn">Crea il tuo primo post</a>
+                    </div>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}
