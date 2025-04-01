@@ -1,3 +1,4 @@
+{% load static %}
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -28,17 +29,17 @@
         }
 
         [data-theme="dark"] {
-            --bg-color: #232323;
-            --text-color: #c0c0c0;
-            --sidebar-bg: #2d2d2d;
+            --bg-color: #181818;
+            --text-color: #e4e4e4;
+            --sidebar-bg: #282828;
             --heading-color: #d0d0d0;
-            --border-color: #444;
+            --border-color: #292929;
             --input-bg: #333333;
             --button-bg: #101010;
             --button-text: #e2e2e2;
             --button-hover-bg: #363636;
             --button-hover-text: #f5f5f5;
-            --link-color: #a0a0a0;
+            --link-color: #717171;
             --accent-color: #a0a0a0;
             --dropdown-bg: #333333;
             --dropdown-text: #c0c0c0;
@@ -404,14 +405,15 @@
 
         /* User menu dropdown */
         .user-avatar {
-            width: 100px;
-            height: 100px;
+            width: 140px;
+            height: 140px;
             border-radius: 50%;
             object-fit: cover;
             object-position: center;
             cursor: pointer;
-            border: 2px solid var(--border-color);
+            border: 3px solid var(--border-color);
             overflow: hidden;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
         }
 
         .user-menu-container {
@@ -486,7 +488,7 @@
       data-toggle-dark-mode-url="{% if user.is_authenticated %}{% url 'toggle_dark_mode' %}{% endif %}">
     <div class="d-flex">
         <!-- Sidebar -->
-        <div id="sidebar" class="p-3">
+        <div id="sidebar" class="p-3" style="display: flex; flex-direction: column; height: 100vh;">
             <div class="d-flex justify-content-between align-items-center mb-4">
                 <button id="sidebarCollapse" class="btn">
                     <i class="fas fa-bars"></i>
@@ -534,13 +536,13 @@
                     <p class="text-muted">{{ user.blogsettings.tagline }}</p>
                 </div>
 
-                <div class="mb-4">
-                    <h5 class="sidebar-full">Album</h5>
+                <div class="mb-4 mt-5">
+                    <h4 class="sidebar-full" style="font-weight: bold;">Album</h4>
                     <ul class="list-unstyled">
                         {% for album in request.user.album_set.all %}
                             <li class="mb-2">
                                 <a href="{% url 'album_detail' album.pk %}" class="text-decoration-none">
-                                    <span class="sidebar-full">{{ album.title }}</span>
+                                    <span class="sidebar-full" style="font-weight: lighter;">{{ album.title }}</span>
                                     <i class="fas fa-images sidebar-icon" title="{{ album.title }}"></i>
                                 </a>
                             </li>
@@ -551,11 +553,11 @@
                 </div>
 
                 <div class="mb-4">
-                    <h5 class="sidebar-full">Blog</h5>
+                    <h5 class="sidebar-full" style="font-weight: bold;">Blog</h5>
                     <ul class="list-unstyled">
                         <li class="mb-2">
                             <a href="{% url 'post_list' %}" class="text-decoration-none">
-                                <span class="sidebar-full">I tuoi Post</span>
+                                <span class="sidebar-full" >I tuoi Post</span>
                                 <i class="fas fa-file-alt sidebar-icon" title="I tuoi Post"></i>
                             </a>
                         </li>
@@ -565,16 +567,18 @@
                 </div>
                 
                 <!-- Altri blog - sezione separata con spazio -->
-                <div class="mt-5 mb-4">
-                    <h5 class="sidebar-full">Esplora</h5>
-                    <ul class="list-unstyled">
-                        <li class="mb-2">
-                            <a href="{% url 'all_blogs' %}" class="text-decoration-none">
-                                <span class="sidebar-full">Altri Blog</span>
-                                <i class="fas fa-globe sidebar-icon" title="Altri Blog"></i>
-                            </a>
-                        </li>
-                    </ul>
+                <div class="mb-4" style="margin-bottom: 30px !important;">
+                    <a href="{% url 'all_blogs' %}" class="btn btn-dark sidebar-full w-100">
+                        <i class="fas fa-globe me-2"></i> Altri Blog
+                    </a>
+                    <a href="{% url 'all_blogs' %}" class="sidebar-icon" title="Altri Blog"><i class="fas fa-globe"></i></a>
+                </div>
+                
+                <!-- Footer con crediti - bloccato in basso -->
+                <div class="text-center mt-auto mb-2 sidebar-full" style="font-size: 0.8em; color: #888;">
+                    <img src="{% static 'logo.png' %}" alt="Blogix Logo" style="height: 30px; margin-bottom: 8px;">
+                    <div>blogix is a blackix platform</div>
+                    <div>all rights reserved</div>
                 </div>
             {% else %}
                 <div class="text-center mb-4">
@@ -621,16 +625,18 @@
                 </div>
                 
                 <!-- Altri blog - sezione separata con spazio -->
-                <div class="mt-5 mb-4">
-                    <h5 class="sidebar-full">Esplora</h5>
-                    <ul class="list-unstyled">
-                        <li class="mb-2">
-                            <a href="{% url 'all_blogs' %}" class="text-decoration-none">
-                                <span class="sidebar-full">Altri Blog</span>
-                                <i class="fas fa-globe sidebar-icon" title="Altri Blog"></i>
-                            </a>
-                        </li>
-                    </ul>
+                <div class="mb-4" style="margin-bottom: 30px !important;">
+                    <a href="{% url 'all_blogs' %}" class="btn btn-dark sidebar-full w-100">
+                        <i class="fas fa-globe me-2"></i> Altri Blog
+                    </a>
+                    <a href="{% url 'all_blogs' %}" class="sidebar-icon" title="Altri Blog"><i class="fas fa-globe"></i></a>
+                </div>
+                
+                <!-- Footer con crediti - bloccato in basso -->
+                <div class="text-center mt-auto mb-2 sidebar-full" style="font-size: 0.8em; color: #888;">
+                    <img src="{% static 'logo.png' %}" alt="Blogix Logo" style="height: 30px; margin-bottom: 8px;">
+                    <div>blogix is a blackix platform</div>
+                    <div>all rights reserved</div>
                 </div>
                 
                 <div class="mt-auto">

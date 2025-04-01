@@ -47,7 +47,7 @@
                                     <div class="d-flex">
                                         <a href="{% url 'post_edit' post.slug %}" class="btn btn-sm me-2">Modifica</a>
                                         <a href="{% url 'post_delete' post.slug %}" class="btn btn-sm me-2">Elimina</a>
-                                        <a href="{% url 'post_detail' username=user.username slug=post.slug %}" class="btn btn-sm">Visualizza</a>
+                                        <a href="#" class="btn btn-sm view-post-btn" data-post-id="{{ post.id }}" data-post-title="{{ post.title }}" data-post-date="{{ post.created_at|date:'d/m/Y H:i' }}">Visualizza</a>
                                     </div>
                                 </div>
                             </div>
@@ -65,4 +65,125 @@
         </div>
     </div>
 </div>
+
+<!-- Post Modal -->
+<div class="post-modal-overlay" id="postModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 99999;">
+    <div class="post-modal-content" style="position: relative; width: 90%; max-width: 800px; margin: 40px auto; padding: 30px;">
+        <span class="close-post-modal" style="position: absolute; top: 10px; right: 15px; font-size: 35px; font-weight: bold; cursor: pointer; z-index: 100000;">&times;</span>
+        
+        <h2 id="postModalTitle" style="margin-bottom: 20px; text-align: center; font-family: 'Playfair Display', serif; font-size: 2.5rem;"></h2>
+        
+        <p id="postModalDate" style="font-size: 0.9rem; text-align: center; margin-bottom: 30px; font-style: italic;"></p>
+        
+        <div id="postModalContent" style="font-family: 'Playfair Display', serif; font-size: 1.2rem; line-height: 1.8; text-align: justify;"></div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+$(document).ready(function() {
+    // Funzione per determinare se è attiva la modalità dark
+    function isDarkMode() {
+        return $('body').attr('data-theme') === 'dark';
+    }
+    
+    // Funzione per aggiornare lo stile del modale in base alla modalità
+    function updateModalStyle() {
+        console.log("Updating modal style. Dark mode: " + isDarkMode());
+        
+        if (isDarkMode()) {
+            // Dark mode: sfondo nero, testo bianco
+            $('.post-modal-overlay').css({
+                'background-color': 'rgba(0,0,0,0.8)',
+                'backdrop-filter': 'blur(40px)',
+                '-webkit-backdrop-filter': 'blur(40px)'
+            });
+            $('.post-modal-content, #postModalTitle, #postModalContent').css('color', '#fff');
+            $('#postModalDate').css('color', '#aaa');
+            $('.close-post-modal').css('color', '#fff');
+        } else {
+            // Light mode: sfondo bianco, testo nero
+            $('.post-modal-overlay').css({
+                'background-color': 'rgba(255,255,255,0.8)',
+                'backdrop-filter': 'blur(10px)',
+                '-webkit-backdrop-filter': 'blur(10px)'
+            });
+            $('.post-modal-content, #postModalTitle, #postModalContent').css('color', '#000');
+            $('#postModalDate').css('color', '#666');
+            $('.close-post-modal').css('color', '#000');
+        }
+    }
+    
+    // Gestione apertura modale post
+    $('.view-post-btn').on('click', function(e) {
+        e.preventDefault();
+        
+        // Recupera i dati del post
+        const postId = $(this).data('post-id');
+        const postTitle = $(this).data('post-title');
+        const postDate = $(this).data('post-date');
+        
+        // Popola il modale con titolo e data
+        $('#postModalTitle').text(postTitle);
+        $('#postModalDate').text('Pubblicato il ' + postDate);
+        
+        // Carica il contenuto del post tramite AJAX per preservare la formattazione
+        $.ajax({
+            url: '{% url "get_post_content" %}',
+            data: { 'post_id': postId },
+            dataType: 'json',
+            success: function(data) {
+                // Inserisci il contenuto nel modale preservando la formattazione
+                $('#postModalContent').html(data.content.replace(/\n/g, '<br>'));
+                
+                // Aggiorna lo stile in base alla modalità attuale
+                updateModalStyle();
+                
+                // Mostra il modale
+                $('#postModal').fadeIn(300);
+                $('body').css('overflow', 'hidden'); // Blocca lo scroll della pagina
+            },
+            error: function() {
+                alert('Errore nel caricamento del contenuto del post.');
+            }
+        });
+    });
+    
+    // Osserva i cambiamenti dell'attributo data-theme sul body
+    const observer = new MutationObserver(function(mutations) {
+        mutations.forEach(function(mutation) {
+            if (mutation.attributeName === 'data-theme' && $('#postModal').is(':visible')) {
+                updateModalStyle();
+            }
+        });
+    });
+    
+    // Inizia ad osservare il body per i cambiamenti dell'attributo data-theme
+    observer.observe(document.body, { attributes: true });
+    
+    // Chiusura modale
+    $('.close-post-modal').on('click', function() {
+        $('#postModal').fadeOut(200);
+        $('body').css('overflow', 'auto'); // Ripristina lo scroll della pagina
+    });
+    
+    // Chiudi il modale cliccando fuori dal contenuto
+    $('#postModal').on('click', function(e) {
+        if (e.target === this) {
+            $('#postModal').fadeOut(200);
+            $('body').css('overflow', 'auto');
+        }
+    });
+    
+    // Chiudi il modale con tasto ESC
+    $(document).keydown(function(e) {
+        if (e.key === 'Escape' && $('#postModal').is(':visible')) {
+            $('#postModal').fadeOut(200);
+            $('body').css('overflow', 'auto');
+        }
+    });
+});
+</script>
 {% endblock %}

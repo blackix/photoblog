@@ -42,4 +42,5 @@ urlpatterns = [
     path('post/<int:post_id>/comment/', views.add_comment_post, name='add_comment_post'),
     path('comment/<int:comment_id>/delete/', views.delete_comment, name='delete_comment'),
     path('photo/<int:photo_id>/comments/', views.get_photo_comments, name='get_photo_comments'),
+    path('api/post/content/', views.get_post_content, name='get_post_content'),
 ]

@@ -666,16 +666,37 @@ def get_photo_comments(request, photo_id):
     Accessibile sia dagli utenti autenticati che dagli utenti anonimi.
     """
     photo = get_object_or_404(Photo, id=photo_id)
-    comments = photo.comments.all().select_related('user')
+    comments = Comment.objects.filter(photo=photo).order_by('-created_at')
     
     comments_data = []
     for comment in comments:
         comments_data.append({
             'id': comment.id,
+            'user': comment.user.username,
             'content': comment.content,
-            'author': comment.user.username,
-            'date': comment.created_at.strftime('%d/%m/%Y %H:%M'),
-            'isOwner': request.user.is_authenticated and request.user == comment.user
+            'created_at': comment.created_at.strftime('%d/%m/%Y %H:%M'),
+            'is_owner': request.user.is_authenticated and request.user == comment.user
         })
     
-    return JsonResponse({'comments': comments_data})
+    return JsonResponse({
+        'comments': comments_data
+    })
+
+def get_post_content(request):
+    """
+    API endpoint per recuperare il contenuto di un post.
+    Utilizzato per caricare il contenuto nel modale mantenendo la formattazione.
+    """
+    post_id = request.GET.get('post_id')
+    if not post_id:
+        return JsonResponse({'error': 'Post ID non fornito'}, status=400)
+    
+    try:
+        post = Post.objects.get(id=post_id)
+        return JsonResponse({
+            'content': post.content,
+            'title': post.title,
+            'created_at': post.created_at.strftime('%d/%m/%Y %H:%M')
+        })
+    except Post.DoesNotExist:
+        return JsonResponse({'error': 'Post non trovato'}, status=404)
