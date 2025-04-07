@@ -2,9 +2,9 @@
 
 {% block content %}
 <div class="container">
-    <div class="d-flex justify-content-between align-items-center mb-4">
-        <h2>{{ album.title }}</h2>
-        <button class="btn btn-danger delete-album" data-album-id="{{ album.id }}" title="Elimina Album">
+    <div class="d-flex align-items-center mb-4">
+        <h2 class="me-2">{{ album.title }}</h2>
+        <button class="btn btn-sm btn-danger delete-album" data-album-id="{{ album.id }}" title="Elimina Album">
             <i class="fas fa-trash"></i>
         </button>
     </div>
@@ -16,11 +16,13 @@
             <div id="dropzone" class="dropzone">
                 <i class="fas fa-cloud-upload-alt fa-3x mb-3"></i>
                 <p>Trascina qui le foto o clicca per selezionarle</p>
-                <input type="file" id="fileInput" multiple style="display: none;" accept="image/*">
+                <!-- Moved file input outside the dropzone to avoid event conflicts -->
                 <div id="upload-progress" class="progress mt-3" style="display: none;">
                     <div class="progress-bar" role="progressbar" style="width: 0%"></div>
                 </div>
             </div>
+            <!-- File input placed outside the dropzone for better event handling -->
+            <input type="file" id="fileInput" name="photos" multiple style="position: absolute; opacity: 0; width: 0.1px; height: 0.1px; overflow: hidden; z-index: -1;" accept="image/*">
         </div>
     </div>
 
@@ -293,9 +295,28 @@
         const dropzone = $('#dropzone');
         const fileInput = $('#fileInput');
         
-        dropzone.on('click', function() {
-            fileInput.click();
+        // Make sure the click event properly triggers the file input
+        // Use event delegation to handle clicks on the dropzone and all its children
+        $(document).on('click', '#dropzone, #dropzone *', function(e) {
+            // Prevent the click from propagating to parent elements
+            e.stopPropagation();
+            
+            // Only trigger file input if we're clicking on the dropzone or its children
+            if ($(e.target).is('#dropzone') || $(e.target).closest('#dropzone').length) {
+                e.preventDefault();
+                
+                // Use direct DOM method for better cross-browser compatibility
+                // Trigger with a slight delay to ensure the event is processed properly
+                setTimeout(function() {
+                    document.getElementById('fileInput').click();
+                }, 50);
+                
+                console.log('Dropzone clicked, triggering file input');
+            }
         });
+        
+        // Add a label for better accessibility and alternative click target
+        $('<label for="fileInput" class="d-none">Seleziona file</label>').insertAfter(fileInput);
         
         dropzone.on('dragover', function(e) {
             e.preventDefault();
@@ -315,16 +336,23 @@
             }
         });
         
-        fileInput.on('change', function() {
-            if (this.files.length) {
+        // Improved file input change handler
+        fileInput.on('change', function(e) {
+            console.log('File input change event triggered');
+            if (this.files && this.files.length) {
+                console.log('Files selected:', this.files.length);
                 handleFiles(this.files);
+            } else {
+                console.log('No files selected');
             }
         });
         
         function handleFiles(files) {
+            console.log('Handling files:', files.length);
             const formData = new FormData();
             
             for (let i = 0; i < files.length; i++) {
+                console.log('Adding file to FormData:', files[i].name);
                 formData.append('photos', files[i]);
             }
             
@@ -332,11 +360,17 @@
         }
         
         function uploadPhotos(formData) {
+            console.log('Starting upload process');
             const progressBar = $('#upload-progress');
             const progressBarInner = progressBar.find('.progress-bar');
             
             progressBar.show();
             progressBarInner.width('0%');
+            progressBarInner.text('0%');
+            
+            // Log the CSRF token (masked for security)
+            const csrfToken = '{{ csrf_token }}';
+            console.log('CSRF Token available:', csrfToken ? 'Yes' : 'No');
             
             $.ajax({
                 url: '{% url "upload_photos" album.id %}',
@@ -345,7 +379,7 @@
                 processData: false,
                 contentType: false,
                 headers: {
-                    'X-CSRFToken': '{{ csrf_token }}'
+                    'X-CSRFToken': csrfToken
                 },
                 xhr: function() {
                     const xhr = new window.XMLHttpRequest();
@@ -359,15 +393,30 @@
                     return xhr;
                 },
                 success: function(response) {
+                    console.log('Upload successful:', response);
+                    progressBarInner.addClass('bg-success');
                     progressBarInner.text('Caricamento completato!');
+                    progressBarInner.width('100%');
                     setTimeout(function() {
                         location.reload();
                     }, 1000);
                 },
                 error: function(xhr, status, error) {
+                    console.error('Upload failed:', status, error);
+                    console.error('Response:', xhr.responseText);
                     progressBar.removeClass('bg-info').addClass('bg-danger');
                     progressBarInner.text('Errore durante il caricamento');
-                    console.error(error);
+                    
+                    // Show more detailed error message
+                    try {
+                        const errorResponse = JSON.parse(xhr.responseText);
+                        if (errorResponse.message) {
+                            progressBarInner.text('Errore: ' + errorResponse.message);
+                        }
+                    } catch (e) {
+                        // If we can't parse the error, just show the status
+                        progressBarInner.text('Errore: ' + status);
+                    }
                 }
             });
         }

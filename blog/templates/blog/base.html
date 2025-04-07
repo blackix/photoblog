@@ -3,7 +3,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <meta name="csrf-token" content="{{ csrf_token }}"> {# Add CSRF token meta tag #}
     <title>{% block title %}Photo Blog{% endblock %}</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
@@ -41,9 +41,9 @@
             --button-hover-text: #f5f5f5;
             --link-color: #717171;
             --accent-color: #a0a0a0;
-            --dropdown-bg: #333333;
-            --dropdown-text: #c0c0c0;
-            --dropdown-hover-bg: #444444;
+            --dropdown-bg: #000000;
+            --dropdown-text: #ffffff;
+            --dropdown-hover-bg: #1a1a1a;
         }
 
         body {
@@ -66,6 +66,8 @@
             position: fixed;
             left: 0;
             z-index: 1000;
+            overflow-y: auto;
+            height: 100%;
         }
 
         #sidebar.collapsed {
@@ -77,25 +79,133 @@
             transition: all 0.3s;
             width: calc(100% - 250px);
             min-height: 100vh;
+            padding: 15px;
+            overflow-x: hidden; /* Prevent horizontal scrolling */
         }
 
         #content.expanded {
             margin-left: 0;
             width: 100%;
         }
+        
+        /* Dark mode button is always in the top-right corner */
+        
+        /* Mobile responsiveness */
+        @media (max-width: 992px) {
+            /* Automatically hide sidebar on smaller screens */
+            #sidebar {
+                margin-left: -250px !important; /* Position sidebar off-screen */
+                transition: margin-left 0.3s; /* Smooth transition */
+            }
+            
+            #sidebar.active {
+                margin-left: 0 !important; /* Show sidebar when active */
+            }
+            
+            /* Full-width content */
+            #content {
+                margin-left: 0 !important;
+                width: 100% !important;
+                transition: all 0.3s;
+            }
+            
+            /* Ensure toggle button is visible */
+            .toggle-button {
+                display: block !important;
+            }
+            
+            /* Adjust container padding */
+            .container {
+                padding-left: 10px;
+                padding-right: 10px;
+            }
+            
+            /* Force vertical scrolling */
+            body {
+                overflow-x: hidden;
+            }
+            
+            /* Improve spacing for mobile */
+            .row {
+                margin-left: -5px;
+                margin-right: -5px;
+            }
+            
+            .col, [class*="col-"] {
+                padding-left: 5px;
+                padding-right: 5px;
+            }
+        }
 
+        /* Toggle buttons */
         .toggle-button {
             position: fixed;
-            left: 10px;
             top: 10px;
             z-index: 1001;
-            display: none;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 40px;
+            height: 40px;
             background-color: var(--bg-color);
-            border: 1px solid var(--text-color);
-            padding: 8px;
+            border: 1px solid var(--border-color);
             border-radius: 4px;
             cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
             color: var(--text-color);
+        }
+        
+        /* Left-aligned sidebar toggle */
+        .sidebar-toggle {
+            left: 10px;
+        }
+        
+        /* Right-aligned dark mode toggle in the top-right corner */
+        .dark-mode-btn {
+            right: 10px;
+            position: fixed;
+            top: 10px;
+            z-index: 1100;
+        }
+        
+        /* Horizontal color selector for photo grid backgrounds */
+        .horizontal-color-selector {
+            position: fixed;
+            right: 60px;
+            top: 10px; /* Same level as dark mode button */
+            z-index: 1100;
+            display: flex;
+            align-items: center;
+        }
+        
+        .color-options {
+            display: flex;
+            gap: 5px;
+        }
+        
+        .color-option {
+            width: 40px;
+            height: 40px;
+            border-radius: 4px;
+            border: 0px solid var(--border-color);
+            cursor: pointer;
+            transition: all 0.2s ease;
+            padding: 0;
+            background: none;
+        }
+        
+        .color-option:hover {
+            transform: scale(1.1);
+        }
+        
+        .color-option.active {
+            border: 0px solid var(--accent-color);
+            transform: scale(1.1);
+        }
+        
+        :root {
+            --photo-grid-bg: #ffffff;
         }
 
         #sidebar.collapsed + #content {
@@ -143,23 +253,74 @@
             background: var(--bg-color);
             cursor: pointer;
             transition: all 0.3s ease;
+            width: 100%;
+            max-width: 100%;
         }
 
         .dropzone:hover {
             border-color: var(--accent-color);
             background: var(--sidebar-bg);
         }
-
-        .dark-mode-toggle {
-            cursor: pointer;
-            padding: 8px;
-            border-radius: 50%;
-            transition: all 0.3s ease;
-            color: var(--text-color);
+        
+        /* Responsive dropzone for mobile */
+        @media (max-width: 576px) {
+            .dropzone {
+                padding: 15px;
+            }
+            
+            .dropzone i {
+                font-size: 2em !important;
+            }
+            
+            .dropzone p {
+                font-size: 14px;
+                margin-bottom: 10px;
+            }
+            
+            /* Improve photo grid on mobile */
+            .photo-grid {
+                grid-template-columns: repeat(2, 1fr) !important;
+                gap: 8px !important;
+            }
+            
+            /* Adjust card padding */
+            .card-body {
+                padding: 12px;
+            }
+            
+            /* Make buttons more tappable */
+            .btn {
+                padding: 8px 12px;
+                margin-bottom: 5px;
+            }
+            
+            /* Adjust form controls */
+            .form-control {
+                font-size: 16px; /* Prevents iOS zoom on input focus */
+            }
+            
+            /* Improve modal display on mobile */
+            .modal-dialog {
+                margin: 10px;
+                max-width: calc(100% - 20px);
+            }
+            
+            /* Better spacing for mobile */
+            h1, h2, h3, h4, h5 {
+                margin-top: 0.5rem;
+                margin-bottom: 0.5rem;
+            }
+            
+            /* Adjust padding for containers */
+            .container, .container-fluid {
+                padding-left: 10px;
+                padding-right: 10px;
+            }
         }
 
-        .dark-mode-toggle:hover {
-            background-color: rgba(128,128,128,0.2);
+        .toggle-button:hover {
+            background-color: var(--accent-color);
+            color: white;
         }
 
         /* Uniform button styling */
@@ -419,20 +580,52 @@
         .user-menu-container {
             position: relative;
             display: inline-block;
+            z-index: 1200; /* Ensure higher z-index for proper layering */
+            cursor: pointer;
         }
 
         .user-menu {
             position: absolute;
-            left: 100%;
-            top: 0;
+            left: 50%; /* Center align with the user icon */
+            top: 100%; /* Position below the user icon */
+            transform: translateX(-50%); /* Center the menu */
             background-color: var(--dropdown-bg);
-            min-width: 180px;
-            box-shadow: 0 8px 16px rgba(0,0,0,0.2);
+            min-width: 220px;
+            box-shadow: 0 8px 16px rgba(0,0,0,0.3);
             border-radius: 8px;
             padding: 8px 0;
-            z-index: 1100;
-            display: none;
-            margin-left: 10px;
+            z-index: 1200;
+            display: none; /* Hidden by default */
+            margin-top: 10px;
+            text-align: left; /* Ensure text is left-aligned */
+            border: 1px solid var(--border-color);
+        }
+        
+        /* Add a small arrow/triangle at the top of the menu */
+        .user-menu::before {
+            content: '';
+            position: absolute;
+            top: -8px;
+            left: 50%;
+            transform: translateX(-50%);
+            border-left: 8px solid transparent;
+            border-right: 8px solid transparent;
+            border-bottom: 8px solid var(--dropdown-bg);
+        }
+        
+        /* Ensure the menu stays within the viewport on small screens */
+        @media (max-width: 768px) {
+            .user-menu {
+                left: auto;
+                right: 0;
+                transform: none;
+                margin-right: 10px;
+            }
+            
+            .user-menu::before {
+                left: auto;
+                right: 15px;
+            }
         }
 
         .user-menu.show {
@@ -445,6 +638,7 @@
             color: var(--dropdown-text);
             transition: all 0.2s ease;
             text-decoration: none;
+            font-weight: 500;
         }
 
         .user-menu-item:hover {
@@ -468,6 +662,7 @@
             padding: 10px 16px;
             border-bottom: 1px solid var(--border-color);
             margin-bottom: 8px;
+            background-color: var(--dropdown-bg);
         }
 
         .user-info .user-name {
@@ -489,22 +684,17 @@
     <div class="d-flex">
         <!-- Sidebar -->
         <div id="sidebar" class="p-3" style="display: flex; flex-direction: column; height: 100vh;">
-            <div class="d-flex justify-content-between align-items-center mb-4">
-                <button id="sidebarCollapse" class="btn">
-                    <i class="fas fa-bars"></i>
-                </button>
-                <div class="dark-mode-toggle" id="darkModeToggle">
-                    <i class="fas fa-moon"></i>
-                </div>
+            <div class="d-flex justify-content-end align-items-center mb-4">
+                <!-- Dark mode toggle moved to top navbar -->
             </div>
 
             {% if user.is_authenticated %}
                 <div class="text-center mb-4">
                     <div class="user-menu-container">
                         {% if user.blogsettings.site_icon %}
-                            <img src="{{ user.blogsettings.site_icon.url }}" alt="{{ user.username }}" class="user-avatar mb-2" id="userMenuToggle">
+                            <img src="{{ user.blogsettings.site_icon.url }}" alt="{{ user.username }}" class="user-avatar mb-2" id="userMenuToggle" onclick="toggleUserMenu(event)">
                         {% else %}
-                            <div class="user-avatar mb-2 d-flex align-items-center justify-content-center bg-secondary" id="userMenuToggle">
+                            <div class="user-avatar mb-2 d-flex align-items-center justify-content-center bg-secondary" id="userMenuToggle" onclick="toggleUserMenu(event)">
                                 <i class="fas fa-user text-white fs-1"></i>
                             </div>
                         {% endif %}
@@ -651,13 +841,31 @@
             {% endif %}
         </div>
 
-        <!-- Toggle Button -->
-        <button class="toggle-button">
-            <i class="fas fa-bars"></i>
+        <!-- Sidebar Toggle Button (left-aligned) -->
+        <button class="toggle-button sidebar-toggle" id="sidebarToggleBtn" type="button">
+            <i class="fas fa-arrow-left" id="sidebarToggleIcon"></i>
         </button>
+        
+        <!-- Dark Mode Toggle Button (top-right corner) -->
+        <button class="toggle-button dark-mode-btn" id="darkModeToggleBtn" type="button">
+            <i class="fas fa-moon" id="darkModeIcon"></i>
+        </button>
+        
+        <!-- Horizontal Color Selector for Photo Grid - Only shown on blog view pages -->
+        {% if request.path|slice:':6' == '/blog/' %}
+        <div class="horizontal-color-selector" id="gridColorSelector">
+            <div class="color-options">
+                <button class="color-option" data-color="#ffffff" style="background-color: #ffffff;"></button>
+                <button class="color-option" data-color="#e0e0e0" style="background-color: #e0e0e0;"></button>
+                <button class="color-option" data-color="#9e9e9e" style="background-color: #9e9e9e;"></button>
+                <button class="color-option" data-color="#424242" style="background-color: #424242;"></button>
+                <button class="color-option" data-color="#121212" style="background-color: #121212;"></button>
+            </div>
+        </div>
+        {% endif %}
 
         <!-- Content -->
-        <div id="content" class="p-4">
+        <div id="content" class="p-4 p-sm-3 p-md-4">
             {% if messages %}
                 {% for message in messages %}
                     <div class="alert alert-{{ message.tags }}">{{ message }}</div>
@@ -673,37 +881,177 @@
         $(document).ready(function() {
             const sidebar = $('#sidebar');
             const content = $('#content');
-            const toggleButton = $('.toggle-button');
+            const toggleButton = $('#sidebarToggleBtn');
+            const toggleIcon = $('#sidebarToggleIcon');
             const userMenuToggle = $('#userMenuToggle');
             const userMenu = $('#userMenu');
+            
+            // Remove document click handlers but be careful not to break user menu functionality
+            $(document).off('click.sidebar');
+            $('body').off('click.sidebar');
+            $('#content').off('click.sidebar');
 
-            function toggleSidebar() {
-                sidebar.toggleClass('collapsed');
-                content.toggleClass('expanded');
-                localStorage.setItem('sidebarCollapsed', sidebar.hasClass('collapsed'));
+            // Function to update the toggle icon based on sidebar state
+            function updateToggleIcon() {
+                const isMobile = $(window).width() <= 768;
+                const isHidden = isMobile ? !sidebar.hasClass('active') : sidebar.hasClass('collapsed');
+                
+                if (isHidden) {
+                    // Sidebar is hidden - show right arrow
+                    toggleIcon.removeClass('fa-arrow-left').addClass('fa-arrow-right');
+                } else {
+                    // Sidebar is visible - show left arrow
+                    toggleIcon.removeClass('fa-arrow-right').addClass('fa-arrow-left');
+                }
+            }
+            
+            // Function to toggle sidebar visibility - ONLY called by toggle button
+            function toggleSidebar(e) {
+                // Prevent default action and stop propagation
+                if (e) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                }
+                
+                const isMobile = $(window).width() <= 992; // Increased breakpoint to 992px
+                
+                if (isMobile) {
+                    // Mobile behavior
+                    sidebar.toggleClass('active');
+                } else {
+                    // Desktop behavior
+                    sidebar.toggleClass('collapsed');
+                    content.toggleClass('expanded');
+                }
+                
+                // Save state to localStorage
+                const isHidden = isMobile ? !sidebar.hasClass('active') : sidebar.hasClass('collapsed');
+                localStorage.setItem('sidebarCollapsed', isHidden);
+                
+                // Update the toggle icon
+                updateToggleIcon();
             }
 
-            $('#sidebarCollapse').on('click', toggleSidebar);
-            toggleButton.on('click', toggleSidebar);
-
-            // User menu toggle
-            userMenuToggle.on('click', function(e) {
-                e.stopPropagation();
-                userMenu.toggleClass('show');
+            // ONLY the toggle button should control the sidebar
+            // Make sure we're using a direct click handler
+            toggleButton.off('click').on('click', function(e) {
+                console.log('Toggle button clicked directly');
+                toggleSidebar(e);
             });
+            
+            // Also attach the handler to the icon to ensure clicks on the icon work
+            toggleIcon.off('click').on('click', function(e) {
+                console.log('Toggle icon clicked');
+                // Prevent the event from propagating to avoid double-triggering
+                e.stopPropagation();
+                // Manually trigger the parent button click
+                toggleButton.trigger('click');
+            });
+            
+            // Make sure no other clicks affect the sidebar
+            // We're not attaching any document-level click handlers that could affect the sidebar
 
-            // Close user menu when clicking outside
+            // User menu toggle with improved positioning - completely rewritten
+            // Global function to toggle user menu - accessible from inline onclick
+            window.toggleUserMenu = function(e) {
+                if (e) {
+                    e.stopPropagation();
+                    e.preventDefault();
+                }
+                console.log('Toggling user menu directly');
+                $('#userMenu').toggle();
+            };
+            
+            // Setup document click handler to close menu when clicking outside
             $(document).on('click', function(e) {
-                if (!userMenuToggle.is(e.target) && !userMenu.is(e.target) && userMenu.has(e.target).length === 0) {
-                    userMenu.removeClass('show');
+                // If click is outside menu and not on the toggle
+                if (!$(e.target).closest('#userMenu').length && 
+                    !$(e.target).closest('#userMenuToggle').length && 
+                    !$(e.target).hasClass('user-avatar')) {
+                    $('#userMenu').hide();
                 }
             });
+            
+            // Ensure menu is initially hidden
+            $('#userMenu').hide();
+            
+            // User menu is now handled by inline onclick and global function
 
-            // Restore sidebar state from localStorage
-            if (localStorage.getItem('sidebarCollapsed') === 'true') {
-                sidebar.addClass('collapsed');
-                content.addClass('expanded');
+            // User menu is now handled by the setupUserMenu function
+            
+            // Photo grid background color selector
+            $('.color-option').click(function() {
+                const selectedColor = $(this).data('color');
+                document.documentElement.style.setProperty('--photo-grid-bg', selectedColor);
+                
+                // Save preference to localStorage
+                localStorage.setItem('photoGridBgColor', selectedColor);
+                
+                // Update active state
+                $('.color-option').removeClass('active');
+                $(this).addClass('active');
+            });
+            
+            // Load saved color preference if it exists
+            const savedColor = localStorage.getItem('photoGridBgColor');
+            if (savedColor) {
+                document.documentElement.style.setProperty('--photo-grid-bg', savedColor);
+                $(`.color-option[data-color="${savedColor}"]`).addClass('active');
+            } else {
+                // Default to white
+                $('.color-option[data-color="#ffffff"]').addClass('active');
             }
+
+            // Force sidebar to be hidden on mobile
+            function applySidebarState() {
+                const screenWidth = $(window).width();
+                const isMobile = screenWidth <= 992;
+                
+                if (isMobile) {
+                    // On mobile, always start with sidebar hidden
+                    sidebar.removeClass('active');
+                    sidebar.addClass('collapsed');
+                    content.addClass('expanded');
+                    console.log('Mobile view: hiding sidebar automatically');
+                } else {
+                    // On desktop, respect user preference
+                    const userWantsHidden = localStorage.getItem('sidebarCollapsed') === 'true';
+                    if (userWantsHidden) {
+                        sidebar.addClass('collapsed');
+                        content.addClass('expanded');
+                    } else {
+                        sidebar.removeClass('collapsed');
+                        content.removeClass('expanded');
+                    }
+                    console.log('Desktop view: sidebar state based on user preference');
+                }
+                
+                // Update the toggle icon
+                updateToggleIcon();
+            }
+            
+            // Apply sidebar state immediately
+            applySidebarState();
+            
+            // Initialize the toggle icon based on current state
+            updateToggleIcon();
+            
+            // Handle window resize events with debouncing for better performance
+            let resizeTimer;
+            $(window).on('resize', function() {
+                clearTimeout(resizeTimer);
+                resizeTimer = setTimeout(function() {
+                    // Apply sidebar state on resize
+                    applySidebarState();
+                    console.log('Window resized, sidebar state updated');
+                }, 250); // Wait 250ms after resize ends before applying changes
+            });
+            
+            // Also apply sidebar state when page loads
+            $(window).on('load', function() {
+                applySidebarState();
+                console.log('Page loaded, sidebar state initialized');
+            });
 
             // Dark mode toggle
             // Dark mode toggle logic
@@ -711,7 +1059,7 @@
             
             if (toggleUrl) {
                 // Logic for authenticated users (AJAX)
-                $('#darkModeToggle').on('click', function() {
+                $('#darkModeToggleBtn').on('click', function() {
                     const csrfToken = $('meta[name="csrf-token"]').attr('content');
                     $.ajax({
                         url: toggleUrl,
@@ -719,6 +1067,7 @@
                         headers: { 'X-CSRFToken': csrfToken },
                         success: function(data) {
                             $('body').attr('data-theme', data.dark_mode ? 'dark' : 'light');
+                            updateDarkModeIcon();
                         },
                         error: function(xhr) {
                             console.error("Error toggling dark mode:", xhr.responseText);
@@ -732,13 +1081,27 @@
                     $('body').attr('data-theme', 'dark');
                 }
                 // Attach click handler
-                $('#darkModeToggle').on('click', function() {
+                $('#darkModeToggleBtn').on('click', function() {
                     const currentTheme = $('body').attr('data-theme');
                     const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
                     $('body').attr('data-theme', newTheme);
                     localStorage.setItem('guestTheme', newTheme);
+                    updateDarkModeIcon();
                 });
             }
+            
+            // Function to update dark mode icon based on current theme
+            function updateDarkModeIcon() {
+                const isDarkMode = $('body').attr('data-theme') === 'dark';
+                if (isDarkMode) {
+                    $('#darkModeIcon').removeClass('fa-moon').addClass('fa-sun');
+                } else {
+                    $('#darkModeIcon').removeClass('fa-sun').addClass('fa-moon');
+                }
+            }
+            
+            // Initialize dark mode icon
+            updateDarkModeIcon();
 
             // Inizializza slideshow se presente
             initializeSlideshow();

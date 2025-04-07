@@ -3,6 +3,36 @@
 
 {% block extra_css %}
 <style>
+    /* Color selector styles */
+    .bg-selector {
+        display: flex;
+        align-items: center;
+    }
+    
+    .color-options {
+        display: flex;
+        gap: 5px;
+    }
+    
+    .color-option {
+        width: 40px;
+        height: 40px;
+        border-radius: 4px;
+        border: 0px solid #ccc;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        padding: 0;
+        background: none;
+    }
+    
+    .color-option:hover {
+        transform: scale(1.1);
+    }
+    
+    .color-option.active {
+        border: 0px solid var(--accent-color);
+        transform: scale(1.1);
+    }
     .photo-grid {
         display: grid;
         grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
@@ -24,6 +54,7 @@
         padding-top: 100%; /* Aspect ratio 1:1 */
         position: relative;
         overflow: hidden;
+        background-color: var(--photo-grid-bg, #ffffff); /* Default to white, but can be changed */
     }
     .photo-frame img {
         position: absolute;
@@ -273,7 +304,20 @@
     <div class="album-header">
         <div class="d-flex justify-content-between align-items-center">
             <h1>{{ album.title }}</h1>
-            <a href="{% url 'blog_view' username=blog_user.username %}" class="btn btn-outline-primary">Torna al Blog</a>
+            <div class="d-flex align-items-center">
+                <!-- Background color selector -->
+                <div class="bg-selector me-3">
+                    <span class="me-2">Sfondo:</span>
+                    <div class="color-options">
+                        <button class="color-option" data-color="#ffffff" style="background-color: #ffffff;"></button>
+                        <button class="color-option" data-color="#e0e0e0" style="background-color: #e0e0e0;"></button>
+                        <button class="color-option" data-color="#9e9e9e" style="background-color: #9e9e9e;"></button>
+                        <button class="color-option" data-color="#424242" style="background-color: #424242;"></button>
+                        <button class="color-option" data-color="#121212" style="background-color: #121212;"></button>
+                    </div>
+                </div>
+                <a href="{% url 'blog_view' username=blog_user.username %}" class="btn btn-outline-primary">Torna al Blog</a>
+            </div>
         </div>
         <p class="text-muted">{{ album.description }}</p>
     </div>
@@ -712,6 +756,28 @@
                 }
             });
         });
+        // Background color selector functionality
+        $('.color-option').click(function() {
+            const selectedColor = $(this).data('color');
+            document.documentElement.style.setProperty('--photo-grid-bg', selectedColor);
+            
+            // Save preference to localStorage
+            localStorage.setItem('photoGridBgColor', selectedColor);
+            
+            // Update active state
+            $('.color-option').removeClass('active');
+            $(this).addClass('active');
+        });
+        
+        // Load saved color preference if it exists
+        const savedColor = localStorage.getItem('photoGridBgColor');
+        if (savedColor) {
+            document.documentElement.style.setProperty('--photo-grid-bg', savedColor);
+            $(`.color-option[data-color="${savedColor}"]`).addClass('active');
+        } else {
+            // Default to white
+            $('.color-option[data-color="#ffffff"]').addClass('active');
+        }
     });
 </script>
 {% endblock %}

@@ -23,7 +23,7 @@
         {% for album in album_list %}
             <div class="album-section mb-4">
                 <h2 class="album-title">{{ album.grouper }}</h2>
-                <div class="photo-grid" style="display: grid; grid-template-columns: repeat(auto-fill, 200px); gap: 40px; background-color: #fff; padding: 20px; border-radius: 8px;">
+                <div class="photo-grid" style="display: grid; grid-template-columns: repeat(auto-fill, 200px); gap: 40px; background-color: var(--photo-grid-bg, #ffffff); padding: 20px; border-radius: 8px;">
                     {% for photo in album.list %}
                         <div class="photo-thumbnail" data-photo-id="{{ photo.id }}" style="width: 200px; height: 200px; overflow: hidden; border-radius: 4px; cursor: pointer;">
                             <img src="{{ photo.thumbnail_url|default:photo.image_url }}" alt="{{ photo.caption|default:'Foto' }}" style="width: 200px; height: 200px; object-fit: cover;">
@@ -381,5 +381,64 @@ $(document).ready(function() {
     
     console.log("Photo viewer initialization complete");
 });
+
+    // Initialize color selector
+    $(document).ready(function() {
+        // Color selector functionality
+        $('.color-option').click(function() {
+            const selectedColor = $(this).data('color');
+            document.documentElement.style.setProperty('--photo-grid-bg', selectedColor);
+            
+            // Save preference to localStorage
+            localStorage.setItem('photoGridBgColor', selectedColor);
+            
+            // Update active state
+            $('.color-option').removeClass('active');
+            $(this).addClass('active');
+        });
+        
+        // Load saved color preference if it exists
+        const savedColor = localStorage.getItem('photoGridBgColor');
+        if (savedColor) {
+            document.documentElement.style.setProperty('--photo-grid-bg', savedColor);
+            $(`.color-option[data-color="${savedColor}"]`).addClass('active');
+        } else {
+            // Default to white
+            $('.color-option[data-color="#ffffff"]').addClass('active');
+        }
+    });
 </script>
+
+<style>
+    /* Color selector styles */
+    .color-selector {
+        display: flex;
+        align-items: center;
+    }
+    
+    .color-options {
+        display: flex;
+        gap: 5px;
+    }
+    
+    .color-option {
+        width: 40px;
+        height: 40px;
+        border-radius: 4px;
+        border: 1px solid #ccc;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        padding: 0;
+        background: none;
+    }
+    
+    .color-option:hover {
+        transform: scale(1.1);
+    }
+    
+    .color-option.active {
+        border: 2px solid var(--accent-color);
+        transform: scale(1.1);
+    }
+</style>
 {% endblock %}

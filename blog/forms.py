@@ -13,7 +13,8 @@ class UserRegistrationForm(UserCreationForm):
     def save(self, commit=True):
         user = super().save(commit=commit)
         if commit:
-            BlogSettings.objects.create(user=user)
+            # Automatically set is_published=True when creating a new BlogSettings
+            BlogSettings.objects.create(user=user, is_published=True)
         return user
 
 class BlogSettingsForm(forms.ModelForm):
