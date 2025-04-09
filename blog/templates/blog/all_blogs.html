@@ -5,6 +5,96 @@
 
 {% block extra_head %}
 <style>
+    /* Stili per il carosello di foto */
+    .photo-carousel-container {
+        margin-bottom: 40px;
+        position: relative;
+        overflow: hidden;
+        border-radius: 10px;
+        box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+    }
+    
+    .photo-carousel {
+        display: flex;
+        overflow-x: auto;
+        scroll-snap-type: x mandatory;
+        scroll-behavior: smooth;
+        -webkit-overflow-scrolling: touch;
+        scrollbar-width: none; /* Firefox */
+    }
+    
+    .photo-carousel::-webkit-scrollbar {
+        display: none; /* Chrome, Safari, Opera */
+    }
+    
+    .carousel-item {
+        flex: 0 0 auto;
+        width: 300px;
+        height: 200px;
+        margin-right: 15px;
+        scroll-snap-align: start;
+        position: relative;
+        border-radius: 8px;
+        overflow: hidden;
+        transition: transform 0.3s ease;
+    }
+    
+    .carousel-item:hover {
+        transform: scale(1.02);
+    }
+    
+    .carousel-item img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+    }
+    
+    .carousel-item-overlay {
+        position: absolute;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        background: linear-gradient(transparent, rgba(0,0,0,0.7));
+        color: white;
+        padding: 10px;
+        opacity: 0;
+        transition: opacity 0.3s ease;
+    }
+    
+    .carousel-item:hover .carousel-item-overlay {
+        opacity: 1;
+    }
+    
+    .carousel-controls {
+        position: absolute;
+        top: 50%;
+        width: 100%;
+        display: flex;
+        justify-content: space-between;
+        transform: translateY(-50%);
+        z-index: 10;
+    }
+    
+    .carousel-control {
+        background-color: rgba(255, 255, 255, 0.7);
+        color: #333;
+        border: none;
+        border-radius: 50%;
+        width: 40px;
+        height: 40px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        margin: 0 10px;
+        transition: background-color 0.3s ease;
+    }
+    
+    .carousel-control:hover {
+        background-color: rgba(255, 255, 255, 0.9);
+    }
+    
+    /* Stili per la griglia dei blog */
     .blog-grid {
         display: grid;
         grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
@@ -78,6 +168,7 @@
         margin-bottom: 10px;
         display: -webkit-box;
         -webkit-line-clamp: 2;
+        line-clamp: 2;
         -webkit-box-orient: vertical;
         overflow: hidden;
     }
@@ -101,6 +192,48 @@
     <div class="page-header">
         <h1>Esplora i Blog</h1>
         <p class="text-muted">Scopri i blog fotografici creati dagli altri utenti</p>
+    </div>
+    
+    {# Sezione Foto in evidenza #}
+    <div class="section-title">
+        <h2>Foto in evidenza</h2>
+        <p class="text-muted">Una selezione casuale di foto dai nostri utenti</p>
+    </div>
+    
+    <div class="photo-carousel-container" style="display: block !important; visibility: visible !important;">
+        <div class="photo-carousel" id="photoCarousel" style="display: flex !important;">
+            {% for photo in random_photos %}
+            <div class="carousel-item" style="display: block !important; cursor: pointer;" 
+                 data-photo-id="{{ photo.id }}"
+                 data-photo-url="{{ photo.image.url }}"
+                 data-photo-caption="{{ photo.caption|default:'Senza titolo' }}"
+                 data-photo-album="{{ photo.album.title }}"
+                 data-photo-username="{{ photo.album.user.username }}"
+                 data-photo-album-id="{{ photo.album.id }}">
+                <img src="{{ photo.image.url }}" alt="{{ photo.caption|default:'Foto' }}" style="display: block !important;">
+                <div class="carousel-item-overlay">
+                    <p>{{ photo.caption|default:'Senza titolo' }}</p>
+                    <small>Album: {{ photo.album.title }} di {{ photo.album.user.username }}</small>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        <div class="carousel-controls">
+            <button class="carousel-control prev-btn"><i class="fas fa-chevron-left"></i></button>
+            <button class="carousel-control next-btn"><i class="fas fa-chevron-right"></i></button>
+        </div>
+    </div>
+    
+    {# Debug info #}
+    <div style="display: none;">
+        <p>Debug: Numero di foto: {{ random_photos|length }}</p>
+        <ul>
+        {% for photo in random_photos %}
+            <li>{{ photo.id }} - {{ photo.album.title }}</li>
+        {% empty %}
+            <li>Nessuna foto trovata</li>
+        {% endfor %}
+        </ul>
     </div>
     
     <div class="blog-grid">
@@ -132,4 +265,177 @@
         {% endfor %}
     </div>
 </div>
+
+<!-- Fullscreen Slideshow for Photos -->
+<div class="fullscreen-slideshow" id="photoDetailModal">
+    <div class="slideshow-controls">
+        <button class="btn-slideshow-prev">
+            <i class="fas fa-chevron-left"></i>
+        </button>
+        <button class="btn-slideshow-close">
+            <i class="fas fa-times"></i>
+        </button>
+        <button class="btn-slideshow-next">
+            <i class="fas fa-chevron-right"></i>
+        </button>
+    </div>
+    <div class="slideshow-content">
+        <div class="slideshow-image-container">
+            <img src="" alt="" id="slideshowImage">
+        </div>
+        <div class="slideshow-info">
+            <h3 id="slideshowCaption"></h3>
+            <p id="slideshowAlbumInfo"></p>
+            <a href="#" id="slideshowAlbumLink" class="btn btn-outline-light btn-sm mt-2">Vai all'album</a>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<style>
+    /* Stili per la visualizzazione a schermo intero */
+    .fullscreen-slideshow {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(0, 0, 0, 0.95);
+        z-index: 9999;
+        display: none;
+    }
+    
+    .slideshow-controls {
+        position: absolute;
+        top: 20px;
+        right: 20px;
+        z-index: 10000;
+        display: flex;
+        gap: 15px;
+    }
+    
+    .slideshow-controls button {
+        background-color: rgba(255, 255, 255, 0.2);
+        color: white;
+        border: none;
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        transition: background-color 0.3s;
+    }
+    
+    .slideshow-controls button:hover {
+        background-color: rgba(255, 255, 255, 0.3);
+    }
+    
+    .slideshow-content {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        height: 100%;
+        padding: 20px;
+    }
+    
+    .slideshow-image-container {
+        max-width: 90%;
+        max-height: 80%;
+        margin-bottom: 20px;
+    }
+    
+    .slideshow-image-container img {
+        max-width: 100%;
+        max-height: 80vh;
+        object-fit: contain;
+    }
+    
+    .slideshow-info {
+        color: white;
+        text-align: center;
+        max-width: 800px;
+    }
+    
+    /* Ridurre la dimensione dei selettori di colore */
+    .color-option {
+        width: 25px !important;
+        height: 25px !important;
+    }
+</style>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Codice per il carosello
+        const carousel = document.getElementById('photoCarousel');
+        const prevBtn = document.querySelector('.prev-btn');
+        const nextBtn = document.querySelector('.next-btn');
+        
+        if (carousel && prevBtn && nextBtn) {
+            const scrollAmount = 320; // Larghezza dell'elemento + margine
+            
+            prevBtn.addEventListener('click', function() {
+                carousel.scrollBy({
+                    left: -scrollAmount,
+                    behavior: 'smooth'
+                });
+            });
+            
+            nextBtn.addEventListener('click', function() {
+                carousel.scrollBy({
+                    left: scrollAmount,
+                    behavior: 'smooth'
+                });
+            });
+        }
+        
+        // Codice per la visualizzazione a schermo intero
+        const carouselItems = document.querySelectorAll('.carousel-item');
+        const slideshow = document.getElementById('photoDetailModal');
+        const slideshowImage = document.getElementById('slideshowImage');
+        const slideshowCaption = document.getElementById('slideshowCaption');
+        const slideshowAlbumInfo = document.getElementById('slideshowAlbumInfo');
+        const slideshowAlbumLink = document.getElementById('slideshowAlbumLink');
+        const closeBtn = document.querySelector('.btn-slideshow-close');
+        
+        // Aggiungi listener per ogni elemento del carosello
+        carouselItems.forEach(item => {
+            item.addEventListener('click', function() {
+                const photoId = this.dataset.photoId;
+                const photoUrl = this.dataset.photoUrl;
+                const photoCaption = this.dataset.photoCaption;
+                const photoAlbum = this.dataset.photoAlbum;
+                const photoUsername = this.dataset.photoUsername;
+                const photoAlbumId = this.dataset.photoAlbumId;
+                
+                // Imposta i dati nella visualizzazione a schermo intero
+                slideshowImage.src = photoUrl;
+                slideshowImage.alt = photoCaption;
+                slideshowCaption.textContent = photoCaption;
+                slideshowAlbumInfo.textContent = `Album: ${photoAlbum} di ${photoUsername}`;
+                slideshowAlbumLink.href = `/blog/${photoUsername}/album/${photoAlbumId}/?photo=${photoId}`;
+                
+                // Mostra la visualizzazione a schermo intero
+                slideshow.style.display = 'block';
+            });
+        });
+        
+        // Chiudi la visualizzazione a schermo intero
+        if (closeBtn) {
+            closeBtn.addEventListener('click', function() {
+                slideshow.style.display = 'none';
+            });
+        }
+        
+        // Chiudi anche con il tasto ESC
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape' && slideshow.style.display === 'block') {
+                slideshow.style.display = 'none';
+            }
+        });
+    });
+</script>
 {% endblock %}

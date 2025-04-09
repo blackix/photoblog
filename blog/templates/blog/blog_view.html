@@ -42,6 +42,9 @@
                         <div class="photo-card" data-photo-id="{{ photo.id }}">
                             <div class="photo-thumbnail-container">
                                 <img src="{{ photo.image_url }}" alt="{{ photo.caption|default:'Foto' }}" class="photo-thumbnail">
+                                <button class="vr-view-button" title="Visualizza in modalità VR" data-photo-url="{{ photo.image_url }}">
+                                    <i class="fas fa-vr-cardboard"></i>
+                                </button>
                             </div>
                             <div class="photo-info">
                                 <h5 class="photo-caption">{{ photo.caption|default:'Senza titolo' }}</h5>
@@ -191,6 +194,34 @@
     position: relative;
     overflow: hidden;
     background-color: var(--photo-grid-bg, #ffffff); /* Default to white, but can be changed */
+}
+
+/* Pulsante VR per le foto */
+.vr-view-button {
+    position: absolute;
+    bottom: 10px;
+    right: 10px;
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background-color: rgba(0, 0, 0, 0.8);
+    color: white;
+    border: 2px solid white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    z-index: 1000;
+    transition: all 0.2s ease;
+    opacity: 0.9;
+    font-size: 18px;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
+}
+
+.vr-view-button:hover {
+    opacity: 1;
+    transform: scale(1.1);
+    background-color: rgba(0, 0, 0, 0.8);
 }
 
 .photo-thumbnail {
@@ -457,6 +488,7 @@
 
 
 {% block extra_js %}
+<script src="{% static 'js/vr-viewer.js' %}"></script>
 <script>
     $(document).ready(function() {
         // Safely parse photos data
@@ -801,6 +833,72 @@
             });
         });
 
+        // Gestione pulsanti VR
+        $('.vr-view-button').click(function(e) {
+            e.stopPropagation(); // Evita di aprire lo slideshow quando si clicca sul pulsante VR
+            const photoUrl = $(this).data('photo-url');
+            
+            // Usa vrPhotoViewer se disponibile
+            if (window.vrPhotoViewer) {
+                window.vrPhotoViewer.openPhotoInVR(photoUrl);
+            } else {
+                // Fallback: apri la foto in un modale a schermo intero
+                showFullscreenPhoto(photoUrl);
+            }
+        });
+        
+        // Funzione per mostrare la foto a schermo intero (fallback)
+        function showFullscreenPhoto(photoUrl) {
+            // Crea il container se non esiste
+            let fullscreenView = document.getElementById('fullscreen-photo-view');
+            if (!fullscreenView) {
+                fullscreenView = document.createElement('div');
+                fullscreenView.id = 'fullscreen-photo-view';
+                fullscreenView.style.position = 'fixed';
+                fullscreenView.style.top = '0';
+                fullscreenView.style.left = '0';
+                fullscreenView.style.width = '100%';
+                fullscreenView.style.height = '100%';
+                fullscreenView.style.backgroundColor = '#000';
+                fullscreenView.style.zIndex = '10000';
+                fullscreenView.style.display = 'flex';
+                fullscreenView.style.alignItems = 'center';
+                fullscreenView.style.justifyContent = 'center';
+                
+                // Crea l'immagine
+                const img = document.createElement('img');
+                img.style.maxWidth = '90%';
+                img.style.maxHeight = '90%';
+                img.style.objectFit = 'contain';
+                
+                // Crea il pulsante di chiusura
+                const closeButton = document.createElement('button');
+                closeButton.style.position = 'absolute';
+                closeButton.style.top = '20px';
+                closeButton.style.right = '20px';
+                closeButton.style.width = '50px';
+                closeButton.style.height = '50px';
+                closeButton.style.borderRadius = '50%';
+                closeButton.style.backgroundColor = 'rgba(0, 0, 0, 0.6)';
+                closeButton.style.color = 'white';
+                closeButton.style.border = 'none';
+                closeButton.style.fontSize = '24px';
+                closeButton.innerHTML = '<i class="fas fa-times"></i>';
+                closeButton.onclick = function() {
+                    fullscreenView.style.display = 'none';
+                };
+                
+                fullscreenView.appendChild(img);
+                fullscreenView.appendChild(closeButton);
+                document.body.appendChild(fullscreenView);
+            }
+            
+            // Aggiorna l'immagine e mostra la vista a schermo intero
+            const img = fullscreenView.querySelector('img');
+            img.src = photoUrl;
+            fullscreenView.style.display = 'flex';
+        }
+        
         // Background color selector functionality
         $('.color-option').click(function() {
             const selectedColor = $(this).data('color');

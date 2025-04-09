@@ -1,6 +1,45 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from .models import BlogSettings
 
+def get_random_photos(limit=10):
+    """
+    Helper function per ottenere foto casuali da album pubblici.
+    Restituisce un queryset di foto casuali da blog pubblicati.
+    """
+    from django.contrib.auth.models import User
+    from .models import Photo, BlogSettings, Album
+    import random
+    
+    # Debug: stampa informazioni
+    print("DEBUG: Executing get_random_photos()")
+    
+    # Ottieni tutti gli utenti con blog pubblicati
+    published_blogs = BlogSettings.objects.filter(is_published=True)
+    published_users = [blog.user for blog in published_blogs]
+    
+    print(f"DEBUG: Found {len(published_users)} users with published blogs")
+    
+    # Ottieni tutti gli album di questi utenti
+    albums = Album.objects.filter(user__in=published_users)
+    print(f"DEBUG: Found {albums.count()} albums from users with published blogs")
+    
+    # Ottieni tutte le foto da questi album
+    all_photos = Photo.objects.filter(album__in=albums)
+    print(f"DEBUG: Found {all_photos.count()} total photos")
+    
+    # Se ci sono meno foto del limite, restituisci tutte
+    if all_photos.count() <= limit:
+        return all_photos
+    
+    # Altrimenti, prendi un campione casuale
+    photos = all_photos.order_by('?')[:limit]
+    
+    # Debug: stampa le foto trovate
+    for photo in photos:
+        print(f"DEBUG: Selected photo ID: {photo.id}, Album: {photo.album.title}")
+    
+    return photos
+
 def get_settings(user=None):
     """
     Helper function to get blog settings.
@@ -513,13 +552,75 @@ def custom_logout(request):
 def all_blogs(request):
     """
     Vista per visualizzare tutti i blog pubblicati dagli utenti.
-    Mostra una griglia con icona, titolo e tagline di ciascun blog.
+    Mostra un carosello di foto casuali e una griglia con icona, titolo e tagline di ciascun blog.
     """
+    import logging
+    import os
+    from django.conf import settings as django_settings
+    logger = logging.getLogger(__name__)
+    
+    # Debug: stampa informazioni sulla richiesta
+    print(f"DEBUG: all_blogs view called with path: {request.path}")
+    print(f"DEBUG: User agent: {request.META.get('HTTP_USER_AGENT', 'Unknown')}")
+    
     # Ottieni tutti gli utenti che hanno un blog pubblicato
     published_blogs = BlogSettings.objects.filter(is_published=True).select_related('user')
+    print(f"DEBUG: Found {published_blogs.count()} published blogs")
     
-    return render(request, 'blog/all_blogs.html', {
-        'published_blogs': published_blogs
+    # Ottieni foto casuali da blog pubblici
+    random_photos = get_random_photos(limit=15)
+    print(f"DEBUG: Found {len(random_photos)} random photos for all_blogs view")
+    
+    # Verifica che il template esista e stampa il percorso completo
+    from django.template.loader import get_template
+    try:
+        template = get_template('blog/all_blogs.html')
+        print("DEBUG: Template 'blog/all_blogs.html' exists")
+        
+        # Stampa tutti i percorsi dei template per debug
+        for template_dir in django_settings.TEMPLATES[0]['DIRS']:
+            template_path = os.path.join(template_dir, 'blog', 'all_blogs.html')
+            if os.path.exists(template_path):
+                print(f"DEBUG: Found template at: {template_path}")
+                with open(template_path, 'r') as f:
+                    first_lines = ''.join(f.readlines()[:20])
+                    print(f"DEBUG: First 20 lines of template:\n{first_lines}")
+    except Exception as e:
+        print(f"DEBUG: Template error: {e}")
+    
+    # Forza l'uso del template corretto
+    context = {
+        'published_blogs': published_blogs,
+        'random_photos': random_photos
+    }
+    
+    # Stampa il contesto per debug
+    print(f"DEBUG: Context keys: {context.keys()}")
+    print(f"DEBUG: random_photos is empty: {len(random_photos) == 0}")
+    
+    # Forza l'uso del template all_blogs.html
+    from django.template.loader import render_to_string
+    html = render_to_string('blog/all_blogs.html', context, request)
+    
+    # Controlla se il carosello è presente nell'HTML renderizzato
+    if 'photo-carousel-container' in html:
+        print("DEBUG: Carousel HTML is present in rendered template")
+    else:
+        print("DEBUG: Carousel HTML is NOT present in rendered template")
+    
+    from django.http import HttpResponse
+    return HttpResponse(html)
+
+def test_carousel(request):
+    """
+    Vista di test per il carosello di foto casuali
+    """
+    # Ottieni foto casuali da blog pubblici
+    random_photos = get_random_photos(limit=15)
+    print(f"DEBUG: Found {len(random_photos)} random photos for test_carousel view")
+    
+    return render(request, 'blog/test_carousel.html', {
+        'random_photos': random_photos
     })
 
 @login_required

@@ -2,9 +2,33 @@ from django.urls import path
 from . import views
 from django.contrib.auth.views import LogoutView
 from .views import CustomLoginView
+from . import mobile_views
 
 urlpatterns = [
+    # URL standard che verranno gestiti con rilevamento mobile nelle viste
     path('', views.home, name='home'),
+    path('blog/<str:username>/', views.blog_view_compact, name='blog_view'),
+    
+    # URL specifici per la versione mobile (accesso diretto)
+    path('m/', mobile_views.mobile_home, name='mobile_home'),
+    path('m/blog/<str:username>/', mobile_views.mobile_blog_view, name='mobile_blog_view'),
+    path('m/explore/', mobile_views.mobile_explore, name='mobile_explore'),
+    path('m/dashboard/', mobile_views.mobile_dashboard, name='mobile_dashboard'),
+    path('m/settings/', mobile_views.mobile_settings, name='mobile_settings'),
+    path('m/album/<int:pk>/', mobile_views.mobile_album_detail, name='mobile_album_detail'),
+    path('m/album/create/', mobile_views.mobile_album_create, name='mobile_album_create'),
+    path('m/photo/<int:photo_id>/delete/', mobile_views.mobile_delete_photo, name='mobile_delete_photo'),
+    path('m/posts/', mobile_views.mobile_post_list, name='mobile_post_list'),
+    path('m/post/create/', mobile_views.mobile_post_create, name='mobile_post_create'),
+    path('m/post/<slug:slug>/edit/', mobile_views.mobile_post_edit, name='mobile_post_edit'),
+    path('m/blog/<str:username>/post/<slug:slug>/', mobile_views.mobile_post_detail, name='mobile_post_detail'),
+    
+    # API endpoints per la versione mobile
+    path('api/blogs/', mobile_views.api_blogs, name='api_blogs'),
+    path('api/photos/<int:photo_id>/', mobile_views.api_photo_detail, name='api_photo_detail'),
+    path('api/photos/<int:photo_id>/comments/', mobile_views.api_photo_comments, name='api_photo_comments'),
+    
+    # URL standard
     path('login/', CustomLoginView.as_view(template_name='blog/login.html'), name='login'),
     path('logout/', views.custom_logout, name='logout'),
     path('register/', views.register, name='register'),
@@ -17,7 +41,6 @@ urlpatterns = [
     path('photo/<int:photo_id>/delete/', views.delete_photo, name='delete_photo'),
     path('photo/<int:photo_id>/update/', views.update_photo, name='update_photo'),
     path('toggle-dark-mode/', views.toggle_dark_mode, name='toggle_dark_mode'),
-    path('blog/<str:username>/', views.blog_view_compact, name='blog_view'),
     path('photos/<int:photo_id>/update-caption/', views.update_photo_caption, name='update_photo_caption'),
     path('api/photo/<int:photo_id>/metadata/', views.get_photo_metadata, name='get_photo_metadata'),
     
@@ -34,6 +57,9 @@ urlpatterns = [
     
     # Explore all blogs
     path('blogs/', views.all_blogs, name='all_blogs'),
+    
+    # Test carousel
+    path('test-carousel/', views.test_carousel, name='test_carousel'),
     
     # Reactions (likes and comments)
     path('photo/<int:photo_id>/like/', views.toggle_like_photo, name='toggle_like_photo'),

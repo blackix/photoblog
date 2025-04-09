@@ -3,6 +3,39 @@
 
 {% block extra_css %}
 <style>
+    /* Blog name and tagline styles */
+    .blog-info-header {
+        margin-bottom: 2rem;
+    }
+    
+    .blog-name {
+        font-size: 2.5rem;
+        font-weight: 700;
+        margin-bottom: 0.5rem;
+        color: var(--heading-color);
+    }
+    
+    .blog-tagline {
+        font-size: 1.2rem;
+        font-style: italic;
+        color: var(--text-muted);
+        margin-bottom: 0;
+    }
+    
+    /* Increased vertical spacing */
+    .album-header {
+        margin-bottom: 2.5rem;
+    }
+    
+    .photo-grid {
+        gap: 25px;
+        margin-bottom: 3rem;
+    }
+    
+    .photo-item {
+        margin-bottom: 1.5rem;
+    }
+    
     /* Color selector styles */
     .bg-selector {
         display: flex;
@@ -15,23 +48,38 @@
     }
     
     .color-option {
-        width: 40px;
-        height: 40px;
-        border-radius: 4px;
-        border: 0px solid #ccc;
+        width: 20px !important;
+        height: 20px !important;
+        min-width: 20px !important;
+        min-height: 20px !important;
+        max-width: 20px !important;
+        max-height: 20px !important;
+        border-radius: 3px !important;
+        border: 0px solid var(--border-color) !important;
         cursor: pointer;
-        transition: all 0.2s ease;
-        padding: 0;
+        transition: none !important;
+        padding: 0 !important;
         background: none;
+        transform: none !important;
     }
     
     .color-option:hover {
-        transform: scale(1.1);
+        transform: none !important;
+        opacity: 0.9;
     }
     
     .color-option.active {
-        border: 0px solid var(--accent-color);
-        transform: scale(1.1);
+        border: 1px solid var(--accent-color) !important;
+        transform: none !important;
+    }
+    
+    /* Dark mode specific styles */
+    [data-theme="dark"] .blog-name {
+        color: #ffffff;
+    }
+    
+    [data-theme="light"] .blog-name {
+        color: #212529;
     }
     .photo-grid {
         display: grid;
@@ -52,7 +100,7 @@
     .photo-frame {
         width: 100%;
         padding-top: 100%; /* Aspect ratio 1:1 */
-        position: relative;
+        position: relative !important; /* Forza position relative */
         overflow: hidden;
         background-color: var(--photo-grid-bg, #ffffff); /* Default to white, but can be changed */
     }
@@ -301,9 +349,14 @@
      data-update-photo-url-base="{% url 'update_photo' photo_id=0 %}"
      data-toggle-like-url-base="{% url 'toggle_like_photo' photo_id=0 %}"
      data-is-authenticated="{{ user.is_authenticated|yesno:'true,false' }}">
-    <div class="album-header">
+    <div class="blog-info-header mb-4">
+        <h1 class="blog-name">Blog di {{ blog_user.username }}</h1>
+        <p class="blog-tagline">{{ blog_settings.tagline }}</p>
+    </div>
+
+    <div class="album-header mb-5">
         <div class="d-flex justify-content-between align-items-center">
-            <h1>{{ album.title }}</h1>
+            <h2>{{ album.title }}</h2>
             <div class="d-flex align-items-center">
                 <!-- Background color selector -->
                 <div class="bg-selector me-3">
@@ -319,7 +372,7 @@
                 <a href="{% url 'blog_view' username=blog_user.username %}" class="btn btn-outline-primary">Torna al Blog</a>
             </div>
         </div>
-        <p class="text-muted">{{ album.description }}</p>
+        <p class="text-muted mt-2">{{ album.description }}</p>
     </div>
     
     <div class="photo-grid">
@@ -356,12 +409,14 @@
                 
                 <!-- Photo Metadata Row -->
                 <div class="photo-metadata-row small text-muted p-2">
-                    {% with camera_info=photo.metadata.CameraInfo %}
-                        <span>{{ camera_info.Modello|default_if_none:'-' }}</span> |
-                        <span>{{ camera_info.Lunghezza Focale|default_if_none:'-' }}</span> |
-                        <span>{{ camera_info.Apertura|default_if_none:'-' }}</span> |
-                        <span>{{ camera_info.Tempo Esposizione|default_if_none:'-' }}</span>
-                    {% endwith %}
+                    {% for photo_data in photos_data %}
+                        {% if photo_data.id == photo.id %}
+                            <span>{{ photo_data.camera_model|default:'-' }}</span> |
+                            <span>{{ photo_data.focal_length|default:'-' }}</span> |
+                            <span>{{ photo_data.f_number|default:'-' }}</span> |
+                            <span>{{ photo_data.exposure|default:'-' }}</span>
+                        {% endif %}
+                    {% endfor %}
                 </div>
             </div>
         {% endfor %}
@@ -424,6 +479,8 @@
 
 
 {% block extra_js %}
+<script src="{% static 'js/vr-debug.js' %}"></script>
+<script src="{% static 'js/vr-public-album.js' %}"></script>
 <script>
     $(document).ready(function() {
         // Carica i dati delle foto dal JSON script tag
@@ -455,6 +512,19 @@
                 `);
                 slidesContainer.append(slide);
             });
+            
+            // Aggiungi i pulsanti VR alle slide dopo che sono state create
+            if (window.vrPhotoViewer) {
+                setTimeout(() => {
+                    const slides = document.querySelectorAll('.slideshow-slide');
+                    slides.forEach(slide => {
+                        const img = slide.querySelector('img');
+                        if (img && !slide.querySelector('.vr-view-button')) {
+                            window.vrPhotoViewer.addVRButtonToPhoto(slide, img.src);
+                        }
+                    });
+                }, 200);
+            }
         }
         
         // Initialize slideshow when document is ready
@@ -515,6 +585,17 @@
             console.log("Showing modal element:", modal);
             modal.css('display', 'flex');
             
+            // Aggiungi il pulsante VR alla slide attiva
+            setTimeout(() => {
+                const activeSlide = document.querySelector('.slideshow-slide.active');
+                if (activeSlide && window.vrPhotoViewer) {
+                    const img = activeSlide.querySelector('img');
+                    if (img && !activeSlide.querySelector('.vr-view-button')) {
+                        window.vrPhotoViewer.addVRButtonToPhoto(activeSlide, img.src);
+                    }
+                }
+            }, 100);
+            
             // Check if modal is visible after showing
             setTimeout(() => {
                 console.log("Modal display style:", modal.css('display'));
@@ -559,6 +640,17 @@
             if (photosData.length > 0) {
                 const newIndex = (currentPhotoIndex - 1 + photosData.length) % photosData.length;
                 showPhoto(photosData[newIndex].id);
+                
+                // Aggiungi il pulsante VR alla slide attiva
+                setTimeout(() => {
+                    const activeSlide = document.querySelector('.slideshow-slide.active');
+                    if (activeSlide && window.vrPhotoViewer) {
+                        const img = activeSlide.querySelector('img');
+                        if (img && !activeSlide.querySelector('.vr-view-button')) {
+                            window.vrPhotoViewer.addVRButtonToPhoto(activeSlide, img.src);
+                        }
+                    }
+                }, 100);
             }
         });
 
@@ -566,6 +658,17 @@
             if (photosData.length > 0) {
                 const newIndex = (currentPhotoIndex + 1) % photosData.length;
                 showPhoto(photosData[newIndex].id);
+                
+                // Aggiungi il pulsante VR alla slide attiva
+                setTimeout(() => {
+                    const activeSlide = document.querySelector('.slideshow-slide.active');
+                    if (activeSlide && window.vrPhotoViewer) {
+                        const img = activeSlide.querySelector('img');
+                        if (img && !activeSlide.querySelector('.vr-view-button')) {
+                            window.vrPhotoViewer.addVRButtonToPhoto(activeSlide, img.src);
+                        }
+                    }
+                }, 100);
             }
         });
         

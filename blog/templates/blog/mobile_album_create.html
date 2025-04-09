@@ -1,0 +1,28 @@
+{% extends "blog/mobile_base.html" %}
+{% load static %}
+
+{% block title %}Crea Nuovo Album - Photo Blog{% endblock %}
+
+{% block mobile_content %}
+<div class="mobile-album-create">
+    <h2 class="mobile-page-title">Crea Nuovo Album</h2>
+    
+    <div class="mobile-card">
+        <form method="post" class="mobile-form">
+            {% csrf_token %}
+            
+            <div class="mobile-form-group">
+                <label for="id_title">Titolo</label>
+                <input type="text" name="title" id="id_title" class="mobile-form-control" required>
+            </div>
+            
+            <div class="mobile-form-group">
+                <label for="id_description">Descrizione</label>
+                <textarea name="description" id="id_description" class="mobile-form-control" rows="4"></textarea>
+            </div>
+            
+            <button type="submit" class="mobile-btn mobile-btn-primary mobile-btn-block">Crea Album</button>
+        </form>
+    </div>
+</div>
+{% endblock %}

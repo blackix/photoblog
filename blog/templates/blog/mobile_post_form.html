@@ -1,0 +1,167 @@
+{% extends "blog/mobile_base.html" %}
+{% load static %}
+
+{% block title %}{% if form.instance.pk %}Modifica Post{% else %}Nuovo Post{% endif %} - Photo Blog{% endblock %}
+
+{% block extra_head %}
+<style>
+    .mobile-post-form {
+        padding: 15px;
+    }
+    .mobile-btn-danger {
+        background-color: #dc3545;
+        color: white;
+    }
+    .mobile-form-buttons {
+        display: flex;
+        gap: 10px;
+        margin-top: 20px;
+    }
+    .mobile-form-buttons .mobile-btn {
+        flex: 1;
+    }
+    .mobile-simple-editor {
+        min-height: 200px;
+        border: 1px solid var(--mobile-border-color);
+        border-radius: 8px;
+        padding: 10px;
+        background-color: var(--mobile-input-bg);
+        color: var(--mobile-text-color);
+        font-size: 16px;
+        line-height: 1.5;
+        width: 100%;
+        resize: vertical;
+    }
+    .mobile-editor-toolbar {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 5px;
+        margin-bottom: 10px;
+        padding: 5px;
+        border: 1px solid var(--mobile-border-color);
+        border-radius: 8px;
+        background-color: var(--mobile-card-bg);
+    }
+    .mobile-editor-btn {
+        background: none;
+        border: 1px solid var(--mobile-border-color);
+        border-radius: 4px;
+        padding: 5px 10px;
+        font-size: 14px;
+        cursor: pointer;
+        color: var(--mobile-text-color);
+    }
+    .mobile-editor-btn:hover {
+        background-color: var(--mobile-border-color);
+    }
+</style>
+{% endblock %}
+
+{% block mobile_content %}
+<div class="mobile-post-form">
+    <h2 class="mobile-page-title">{% if form.instance.pk %}Modifica Post{% else %}Nuovo Post{% endif %}</h2>
+    
+    <form method="post" class="mobile-form">
+        {% csrf_token %}
+        
+        <div class="mobile-form-group">
+            <label for="id_title">Titolo</label>
+            <input type="text" name="title" id="id_title" class="mobile-form-control" value="{{ form.title.value|default:'' }}" required>
+        </div>
+        
+        <div class="mobile-form-group">
+            <label for="id_content">Contenuto</label>
+            <div class="mobile-editor-toolbar">
+                <button type="button" class="mobile-editor-btn" onclick="formatText('bold')"><i class="fas fa-bold"></i></button>
+                <button type="button" class="mobile-editor-btn" onclick="formatText('italic')"><i class="fas fa-italic"></i></button>
+                <button type="button" class="mobile-editor-btn" onclick="formatText('h2')"><i class="fas fa-heading"></i></button>
+                <button type="button" class="mobile-editor-btn" onclick="formatText('ul')"><i class="fas fa-list-ul"></i></button>
+                <button type="button" class="mobile-editor-btn" onclick="formatText('ol')"><i class="fas fa-list-ol"></i></button>
+                <button type="button" class="mobile-editor-btn" onclick="formatText('link')"><i class="fas fa-link"></i></button>
+            </div>
+            <textarea name="content" id="id_content" class="mobile-simple-editor">{{ form.content.value|default:'' }}</textarea>
+        </div>
+        
+        <div class="mobile-form-group mobile-form-check">
+            <input type="checkbox" name="published" id="id_published" class="mobile-form-check-input" {% if form.published.value %}checked{% endif %}>
+            <label for="id_published" class="mobile-form-check-label">Pubblica subito</label>
+        </div>
+        
+        <div class="mobile-form-buttons">
+            <button type="submit" class="mobile-btn mobile-btn-primary">
+                <i class="fas fa-save"></i> Salva
+            </button>
+            <a href="{% url 'post_list' %}" class="mobile-btn mobile-btn-outline">
+                <i class="fas fa-times"></i> Annulla
+            </a>
+            {% if form.instance.pk %}
+            <a href="{% url 'post_delete' slug=form.instance.slug %}" class="mobile-btn mobile-btn-danger" onclick="return confirm('Sei sicuro di voler eliminare questo post?');">
+                <i class="fas fa-trash"></i> Elimina
+            </a>
+            {% endif %}
+        </div>
+    </form>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Funzioni per l'editor semplice
+    function formatText(command) {
+        const textarea = document.getElementById('id_content');
+        const start = textarea.selectionStart;
+        const end = textarea.selectionEnd;
+        const selectedText = textarea.value.substring(start, end);
+        let replacement = '';
+        
+        switch(command) {
+            case 'bold':
+                replacement = '<strong>' + selectedText + '</strong>';
+                break;
+            case 'italic':
+                replacement = '<em>' + selectedText + '</em>';
+                break;
+            case 'h2':
+                replacement = '<h2>' + selectedText + '</h2>';
+                break;
+            case 'ul':
+                // Dividi il testo selezionato in righe e aggiungi i tag della lista
+                const ulLines = selectedText.split('\n');
+                replacement = '<ul>\n';
+                ulLines.forEach(line => {
+                    if (line.trim() !== '') {
+                        replacement += '  <li>' + line + '</li>\n';
+                    }
+                });
+                replacement += '</ul>';
+                break;
+            case 'ol':
+                // Dividi il testo selezionato in righe e aggiungi i tag della lista numerata
+                const olLines = selectedText.split('\n');
+                replacement = '<ol>\n';
+                olLines.forEach(line => {
+                    if (line.trim() !== '') {
+                        replacement += '  <li>' + line + '</li>\n';
+                    }
+                });
+                replacement += '</ol>';
+                break;
+            case 'link':
+                const url = prompt('Inserisci l\'URL del link:', 'http://');
+                if (url) {
+                    replacement = '<a href="' + url + '">' + (selectedText || url) + '</a>';
+                } else {
+                    return; // Annulla se l'utente ha annullato il prompt
+                }
+                break;
+        }
+        
+        // Sostituisci il testo selezionato con il testo formattato
+        textarea.value = textarea.value.substring(0, start) + replacement + textarea.value.substring(end);
+        
+        // Imposta il focus di nuovo sul textarea
+        textarea.focus();
+    }
+</script>
+{% endblock %}

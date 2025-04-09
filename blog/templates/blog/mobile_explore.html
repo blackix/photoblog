@@ -1,0 +1,356 @@
+{% extends "blog/mobile_base.html" %}
+{% load static %}
+
+{% block title %}Esplora Blog - Photo Blog{% endblock %}
+
+{% block mobile_content %}
+<div class="mobile-explore">
+    <h2 class="mobile-page-title">Esplora Blog</h2>
+    
+    {% if random_photos %}
+    <div class="mobile-section-title">
+        <h3>Foto in evidenza</h3>
+        <p class="mobile-text-muted">Una selezione casuale di foto dai nostri utenti</p>
+    </div>
+    
+    <div class="mobile-photo-carousel-container">
+        <div class="mobile-photo-carousel" id="mobilePhotoCarousel">
+            {% for photo in random_photos %}
+            <div class="mobile-carousel-item" 
+                 data-photo-id="{{ photo.id }}"
+                 data-photo-url="{{ photo.image.url }}"
+                 data-photo-caption="{{ photo.caption|default:'Senza titolo' }}"
+                 data-photo-album="{{ photo.album.title }}"
+                 data-photo-username="{{ photo.album.user.username }}"
+                 data-photo-album-id="{{ photo.album.id }}">
+                <img src="{{ photo.image.url }}" alt="{{ photo.caption|default:'Foto' }}">
+                <div class="mobile-carousel-item-overlay">
+                    <p>{{ photo.caption|default:'Senza titolo' }}</p>
+                    <small>Album: {{ photo.album.title }} di {{ photo.album.user.username }}</small>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
+    
+    <div class="mobile-section-title" style="margin-top: 40px;">
+        <h3>Blog da esplorare</h3>
+        <p class="mobile-text-muted">Scopri i blog fotografici creati dagli altri utenti</p>
+    </div>
+    
+    <div class="mobile-blogs-grid">
+        {% if blogs %}
+            {% for blog in blogs %}
+                <a href="{% url 'mobile_blog_view' username=blog.username %}" class="mobile-blog-cell">
+                    <div class="mobile-blog-avatar-container">
+                        {% if blog.site_icon %}
+                            <img src="{{ blog.site_icon }}" alt="{{ blog.username }}" class="mobile-blog-avatar">
+                        {% else %}
+                            <div class="mobile-blog-avatar-placeholder">{{ blog.username|first|upper }}</div>
+                        {% endif %}
+                    </div>
+                    <div class="mobile-blog-name">
+                        <p>{{ blog.username }}</p>
+                    </div>
+                </a>
+            {% endfor %}
+        {% else %}
+            <div class="mobile-empty-message">
+                <p>Non ci sono ancora blog da esplorare.</p>
+            </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Fullscreen Slideshow for Photos -->
+<div class="mobile-fullscreen-slideshow" id="mobilePhotoDetailModal">
+    <div class="mobile-slideshow-controls">
+        <button class="mobile-btn-slideshow-prev">
+            <i class="fas fa-chevron-left"></i>
+        </button>
+        <button class="mobile-btn-slideshow-close">
+            <i class="fas fa-times"></i>
+        </button>
+        <button class="mobile-btn-slideshow-next">
+            <i class="fas fa-chevron-right"></i>
+        </button>
+    </div>
+    <div class="mobile-slideshow-content">
+        <div class="mobile-slideshow-image-container">
+            <img src="" alt="" id="mobileSlideshowImage">
+        </div>
+        <div class="mobile-slideshow-info">
+            <h3 id="mobileSlideshowCaption"></h3>
+            <p id="mobileSlideshowAlbumInfo"></p>
+            <a href="#" id="mobileSlideshowAlbumLink" class="mobile-btn mobile-btn-outline-light mobile-btn-sm mt-2">Vai all'album</a>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<style>
+    /* Stili per la griglia di blog */
+    .mobile-blogs-grid {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 15px;
+        margin-top: 20px;
+        margin-bottom: 30px;
+    }
+    
+    .mobile-blog-cell {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        text-decoration: none;
+        color: inherit;
+        text-align: center;
+        padding: 10px;
+        border-radius: 8px;
+        transition: background-color 0.2s;
+    }
+    
+    .mobile-blog-cell:active {
+        background-color: rgba(0, 0, 0, 0.05);
+    }
+    
+    .mobile-blog-avatar-container {
+        width: 60px;
+        height: 60px;
+        margin-bottom: 8px;
+    }
+    
+    .mobile-blog-avatar {
+        width: 100%;
+        height: 100%;
+        border-radius: 50%;
+        object-fit: cover;
+    }
+    
+    .mobile-blog-avatar-placeholder {
+        width: 100%;
+        height: 100%;
+        border-radius: 50%;
+        background-color: var(--accent-color, #4a9eff);
+        color: white;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 24px;
+        font-weight: bold;
+    }
+    
+    .mobile-blog-name p {
+        margin: 0;
+        font-size: 14px;
+        font-weight: 500;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        max-width: 80px;
+    }
+    
+    /* Stili per la visualizzazione a schermo intero mobile */
+    .mobile-fullscreen-slideshow {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(0, 0, 0, 0.95);
+        z-index: 9999;
+        display: none;
+    }
+    
+    .mobile-slideshow-controls {
+        position: absolute;
+        top: 20px;
+        right: 20px;
+        z-index: 10000;
+        display: flex;
+        gap: 15px;
+    }
+    
+    .mobile-slideshow-controls button {
+        background-color: rgba(255, 255, 255, 0.2);
+        color: white;
+        border: none;
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+    }
+    
+    .mobile-slideshow-content {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        height: 100%;
+        padding: 20px;
+    }
+    
+    .mobile-slideshow-image-container {
+        width: 100%;
+        height: 60%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-bottom: 20px;
+    }
+    
+    .mobile-slideshow-image-container img {
+        max-width: 90%;
+        max-height: 90%;
+        width: auto;
+        height: auto;
+        object-fit: contain;
+        border-radius: 4px;
+    }
+    
+    .mobile-slideshow-info {
+        color: white;
+        text-align: center;
+        max-width: 90%;
+    }
+    
+    .mobile-carousel-item {
+        cursor: pointer;
+    }
+</style>
+
+<script>
+$(document).ready(function() {
+    console.log('Mobile explore script loaded');
+    
+    // Inizializza il carosello di foto
+    const carousel = document.getElementById('mobilePhotoCarousel');
+    if (carousel) {
+        // Aggiungi gestione dello swipe per il carosello
+        let startX, endX;
+        
+        // Aggiungi listener per il click sulle foto del carosello
+        const carouselItems = document.querySelectorAll('.mobile-carousel-item');
+        const slideshow = document.getElementById('mobilePhotoDetailModal');
+        const slideshowImage = document.getElementById('mobileSlideshowImage');
+        const slideshowCaption = document.getElementById('mobileSlideshowCaption');
+        const slideshowAlbumInfo = document.getElementById('mobileSlideshowAlbumInfo');
+        const slideshowAlbumLink = document.getElementById('mobileSlideshowAlbumLink');
+        const closeBtn = document.querySelector('.mobile-btn-slideshow-close');
+        
+        console.log('Found ' + carouselItems.length + ' carousel items');
+        
+        // Aggiungi listener per ogni elemento del carosello
+        carouselItems.forEach(function(item) {
+            item.addEventListener('click', function(e) {
+                console.log('Carousel item clicked');
+                
+                const photoId = this.getAttribute('data-photo-id');
+                const photoUrl = this.getAttribute('data-photo-url');
+                const photoCaption = this.getAttribute('data-photo-caption');
+                const photoAlbum = this.getAttribute('data-photo-album');
+                const photoUsername = this.getAttribute('data-photo-username');
+                const photoAlbumId = this.getAttribute('data-photo-album-id');
+                
+                console.log('Photo data:', photoId, photoUrl, photoCaption);
+                
+                // Imposta i dati nella visualizzazione a schermo intero
+                slideshowImage.src = photoUrl;
+                slideshowImage.alt = photoCaption;
+                slideshowCaption.textContent = photoCaption;
+                slideshowAlbumInfo.textContent = 'Album: ' + photoAlbum + ' di ' + photoUsername;
+                slideshowAlbumLink.href = '/blog/' + photoUsername + '/album/' + photoAlbumId + '/?photo=' + photoId;
+                
+                // Mostra la visualizzazione a schermo intero
+                slideshow.style.display = 'block';
+            });
+        });
+        
+        // Chiudi la visualizzazione a schermo intero
+        if (closeBtn) {
+            closeBtn.addEventListener('click', function() {
+                slideshow.style.display = 'none';
+            });
+        }
+        carousel.addEventListener('touchstart', function(e) {
+            startX = e.touches[0].clientX;
+        }, false);
+        
+        carousel.addEventListener('touchend', function(e) {
+            endX = e.changedTouches[0].clientX;
+            const diff = startX - endX;
+            
+            // Se lo swipe è significativo (più di 50px)
+            if (Math.abs(diff) > 50) {
+                // Calcola la larghezza di scorrimento (larghezza elemento + margine)
+                const scrollAmount = 265;
+                
+                if (diff > 0) {
+                    // Swipe verso sinistra - vai avanti
+                    carousel.scrollBy({
+                        left: scrollAmount,
+                        behavior: 'smooth'
+                    });
+                } else {
+                    // Swipe verso destra - vai indietro
+                    carousel.scrollBy({
+                        left: -scrollAmount,
+                        behavior: 'smooth'
+                    });
+                }
+            }
+        }, false);
+    }
+    
+    // Carica la lista dei blog se non è già presente
+    if ($('.mobile-blogs-list').children().length === 0) {
+        $.ajax({
+            url: '/api/blogs/',
+            method: 'GET',
+            success: function(data) {
+                if (data.blogs && data.blogs.length > 0) {
+                    let blogsHtml = '';
+                    data.blogs.forEach(function(blog) {
+                        let avatarHtml = '';
+                        if (blog.site_icon) {
+                            avatarHtml = `<img src="${blog.site_icon}" alt="${blog.username}" class="mobile-blog-avatar">`;
+                        } else {
+                            avatarHtml = `<div class="mobile-blog-avatar-placeholder">${blog.username.charAt(0).toUpperCase()}</div>`;
+                        }
+                        
+                        blogsHtml += `
+                            <div class="mobile-blog-card">
+                                <div class="mobile-blog-header">
+                                    ${avatarHtml}
+                                    <div class="mobile-blog-info">
+                                        <h3 class="mobile-blog-title">${blog.username}</h3>
+                                        <p class="mobile-blog-tagline">${blog.tagline || ''}</p>
+                                    </div>
+                                </div>
+                                <div class="mobile-blog-actions">
+                                    <a href="/m/blog/${blog.username}/" class="mobile-btn mobile-btn-primary mobile-btn-block">
+                                        Visita Blog
+                                    </a>
+                                </div>
+                            </div>
+                        `;
+                    });
+                    
+                    $('.mobile-blogs-list').html(blogsHtml);
+                } else {
+                    $('.mobile-blogs-list').html('<div class="mobile-empty-message"><p>Non ci sono ancora blog da esplorare.</p></div>');
+                }
+            },
+            error: function() {
+                $('.mobile-blogs-list').html('<div class="mobile-empty-message"><p>Errore nel caricamento dei blog.</p></div>');
+            }
+        });
+    }
+});
+</script>
+{% endblock %}

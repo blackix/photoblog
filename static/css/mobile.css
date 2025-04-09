@@ -1,0 +1,345 @@
+/**
+ * Mobile styles for Photoblog
+ * Ottimizzazione per dispositivi mobili, in particolare iPhone
+ */
+
+/* Regole generali per dispositivi mobili */
+@media (max-width: 767px) {
+    /* Layout generale */
+    body {
+        overflow-x: hidden;
+    }
+    
+    .container {
+        padding: 10px;
+        width: 100%;
+        max-width: 100%;
+    }
+    
+    /* Sidebar a schermo intero su mobile */
+    #sidebar {
+        position: fixed;
+        left: -100%;
+        width: 100%;
+        height: 100vh;
+        max-width: 100%;
+        z-index: 1050;
+        transition: transform 0.3s ease;
+        transform: translateX(-100%);
+        box-shadow: none;
+        overflow-y: auto;
+        padding: 20px !important;
+    }
+    
+    #sidebar.show {
+        left: 0;
+        transform: translateX(0);
+    }
+    
+    /* Stili per il menu mobile a schermo intero */
+    .mobile-fullscreen-menu {
+        display: flex;
+        flex-direction: column;
+        height: 100%;
+        width: 100%;
+    }
+    
+    /* Header del menu mobile */
+    .mobile-menu-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 30px;
+    }
+    
+    /* Pulsante di chiusura del menu */
+    .mobile-menu-close {
+        font-size: 24px;
+        background: none;
+        border: none;
+        color: var(--text-color);
+        padding: 10px;
+    }
+    
+    /* Sezione login/registrazione in evidenza */
+    .mobile-auth-section {
+        background-color: var(--accent-color, #f5f5f5);
+        padding: 20px;
+        border-radius: 10px;
+        margin-bottom: 20px;
+        text-align: center;
+    }
+    
+    .mobile-auth-section h3 {
+        margin-bottom: 15px;
+        font-size: 1.2rem;
+    }
+    
+    .mobile-auth-buttons {
+        display: flex;
+        gap: 10px;
+        justify-content: center;
+    }
+    
+    .mobile-auth-buttons .btn {
+        flex: 1;
+        padding: 12px 0;
+        font-size: 1rem;
+    }
+    
+    /* Sezione per esplorare altri blog */
+    .mobile-explore-section {
+        margin-bottom: 20px;
+    }
+    
+    .mobile-explore-section h3 {
+        margin-bottom: 15px;
+        font-size: 1.2rem;
+    }
+    
+    .mobile-blog-list {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+    }
+    
+    .mobile-blog-item {
+        display: flex;
+        align-items: center;
+        padding: 10px;
+        background-color: var(--bg-color);
+        border-radius: 8px;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    }
+    
+    .mobile-blog-avatar {
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        margin-right: 10px;
+        object-fit: cover;
+    }
+    
+    .mobile-blog-name {
+        font-weight: 600;
+    }
+    
+    .sidebar-toggle {
+        display: block !important;
+        position: fixed;
+        top: 10px;
+        left: 10px;
+        z-index: 1060;
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        background-color: var(--button-bg);
+        color: var(--button-text);
+        box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+    }
+    
+    /* Contenuto principale */
+    .main-content {
+        margin-left: 0 !important;
+        width: 100% !important;
+        padding-top: 60px; /* Spazio per il pulsante del menu */
+    }
+    
+    /* Header del blog */
+    .blog-header {
+        text-align: center;
+        padding: 10px 0;
+    }
+    
+    .blog-header h2 {
+        font-size: 1.5rem;
+    }
+    
+    /* Griglia delle foto */
+    .photo-grid {
+        grid-template-columns: repeat(2, 1fr) !important;
+        gap: 10px !important;
+        padding: 10px !important;
+    }
+    
+    .photo-thumbnail {
+        width: 100% !important;
+        height: 0 !important;
+        padding-bottom: 100% !important; /* Aspect ratio 1:1 */
+        position: relative;
+    }
+    
+    .photo-thumbnail img {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+    }
+    
+    /* Titoli degli album */
+    .album-title {
+        font-size: 1.3rem;
+        margin-bottom: 10px;
+        padding-left: 5px;
+    }
+    
+    .album-section {
+        margin-bottom: 20px;
+    }
+    
+    /* Modal delle foto */
+    .photo-modal-content {
+        flex-direction: column !important;
+        width: 100% !important;
+        margin: 0 !important;
+        height: 100vh;
+    }
+    
+    .photo-frame {
+        width: 100% !important;
+        height: auto !important;
+        max-height: 70vh;
+    }
+    
+    .photo-info {
+        width: 100% !important;
+        padding: 10px !important;
+    }
+    
+    /* Modalità VR/Immersiva */
+    .immersive-view {
+        padding: 0;
+    }
+    
+    .immersive-img {
+        width: 100%;
+        height: auto;
+        max-height: 100vh;
+    }
+    
+    .immersive-close-btn {
+        top: 10px;
+        right: 10px;
+        width: 40px;
+        height: 40px;
+        font-size: 20px;
+    }
+    
+    .immersive-nav-btn {
+        width: 40px;
+        height: 60px;
+    }
+    
+    .immersive-prev-btn {
+        left: 5px;
+    }
+    
+    .immersive-next-btn {
+        right: 5px;
+    }
+    
+    /* Pulsanti VR */
+    .vr-view-button {
+        bottom: 5px;
+        right: 5px;
+        width: 30px;
+        height: 30px;
+    }
+}
+
+/* Regole specifiche per iPhone */
+@media (max-width: 428px) { /* iPhone 13 Pro Max width */
+    .photo-grid {
+        grid-template-columns: repeat(2, 1fr) !important;
+    }
+    
+    .photo-thumbnail {
+        border-radius: 8px;
+    }
+    
+    /* Ottimizzazioni per il touch */
+    button, 
+    .vr-view-button, 
+    .immersive-close-btn,
+    .immersive-nav-btn {
+        min-width: 44px;
+        min-height: 44px;
+    }
+    
+    /* Miglioramenti per la leggibilità */
+    .photo-caption, 
+    .photo-date,
+    .comment-text {
+        font-size: 16px;
+    }
+    
+    /* Miglioramenti per l'interazione */
+    .comment-form textarea {
+        font-size: 16px;
+        padding: 10px;
+        height: 80px;
+    }
+    
+    /* Prevenire lo zoom automatico su input */
+    input, select, textarea {
+        font-size: 16px;
+    }
+}
+
+/* Orientamento orizzontale per dispositivi mobili */
+@media (max-width: 767px) and (orientation: landscape) {
+    .photo-grid {
+        grid-template-columns: repeat(3, 1fr) !important;
+    }
+    
+    .photo-modal-content {
+        flex-direction: row !important;
+    }
+    
+    .photo-frame {
+        width: 70% !important;
+        max-height: 90vh;
+    }
+    
+    .photo-info {
+        width: 30% !important;
+    }
+}
+
+/* Stili per dispositivi con notch (iPhone X e successivi) */
+@supports (padding: max(0px)) {
+    .photo-modal-overlay,
+    .immersive-view {
+        padding-left: env(safe-area-inset-left);
+        padding-right: env(safe-area-inset-right);
+        padding-top: env(safe-area-inset-top);
+        padding-bottom: env(safe-area-inset-bottom);
+    }
+    
+    .immersive-close-btn {
+        top: max(10px, env(safe-area-inset-top));
+        right: max(10px, env(safe-area-inset-right));
+    }
+    
+    .sidebar-toggle {
+        top: max(10px, env(safe-area-inset-top));
+        left: max(10px, env(safe-area-inset-left));
+    }
+}
+
+/* Animazioni touch ottimizzate */
+@media (hover: none) {
+    .photo-thumbnail:active {
+        transform: scale(0.98);
+        transition: transform 0.1s;
+    }
+    
+    .vr-view-button:active,
+    .immersive-nav-btn:active,
+    .immersive-close-btn:active {
+        opacity: 1;
+        transform: scale(0.95);
+    }
+}

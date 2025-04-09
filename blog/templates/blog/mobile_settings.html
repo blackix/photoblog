@@ -1,0 +1,49 @@
+{% extends "blog/mobile_base.html" %}
+{% load static %}
+
+{% block title %}Impostazioni - Photo Blog{% endblock %}
+
+{% block mobile_content %}
+<div class="mobile-settings">
+    <h2 class="mobile-page-title">Impostazioni Blog</h2>
+    
+    <div class="mobile-card">
+        <form method="post" enctype="multipart/form-data" class="mobile-form">
+            {% csrf_token %}
+            
+            <div class="mobile-form-group">
+                <label for="id_blog_name">Nome del Blog</label>
+                <input type="text" name="blog_name" id="id_blog_name" class="mobile-form-control" value="{{ form.blog_name.value|default:'' }}">
+            </div>
+            
+            <div class="mobile-form-group">
+                <label for="id_tagline">Tagline</label>
+                <input type="text" name="tagline" id="id_tagline" class="mobile-form-control" value="{{ form.tagline.value|default:'' }}">
+            </div>
+            
+            <div class="mobile-form-group">
+                <label for="id_site_icon">Icona del Sito</label>
+                {% if settings.site_icon %}
+                <div class="mobile-current-icon">
+                    <img src="{{ settings.site_icon.url }}" alt="Icona attuale">
+                    <p>Icona attuale</p>
+                </div>
+                {% endif %}
+                <input type="file" name="site_icon" id="id_site_icon" class="mobile-form-control-file">
+            </div>
+            
+            <div class="mobile-form-group mobile-form-check">
+                <input type="checkbox" name="is_published" id="id_is_published" class="mobile-form-check-input" {% if form.is_published.value %}checked{% endif %}>
+                <label for="id_is_published" class="mobile-form-check-label">Pubblica Blog</label>
+            </div>
+            
+            <div class="mobile-form-group mobile-form-check">
+                <input type="checkbox" name="dark_mode" id="id_dark_mode" class="mobile-form-check-input" {% if form.dark_mode.value %}checked{% endif %}>
+                <label for="id_dark_mode" class="mobile-form-check-label">Modalità Scura</label>
+            </div>
+            
+            <button type="submit" class="mobile-btn mobile-btn-primary mobile-btn-block">Salva Modifiche</button>
+        </form>
+    </div>
+</div>
+{% endblock %}

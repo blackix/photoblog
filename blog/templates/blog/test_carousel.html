@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Carosello</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        
+        h1 {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        
+        /* Stili per il carosello di foto */
+        .photo-carousel-container {
+            margin-bottom: 40px;
+            position: relative;
+            overflow: hidden;
+            border-radius: 10px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+        
+        .photo-carousel {
+            display: flex;
+            overflow-x: auto;
+            scroll-snap-type: x mandatory;
+            scroll-behavior: smooth;
+            -webkit-overflow-scrolling: touch;
+            scrollbar-width: none; /* Firefox */
+        }
+        
+        .photo-carousel::-webkit-scrollbar {
+            display: none; /* Chrome, Safari, Opera */
+        }
+        
+        .carousel-item {
+            flex: 0 0 auto;
+            width: 300px;
+            height: 200px;
+            margin-right: 15px;
+            scroll-snap-align: start;
+            position: relative;
+            border-radius: 8px;
+            overflow: hidden;
+            transition: transform 0.3s ease;
+        }
+        
+        .carousel-item:hover {
+            transform: scale(1.02);
+        }
+        
+        .carousel-item img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+        
+        .carousel-item-overlay {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: linear-gradient(transparent, rgba(0,0,0,0.7));
+            color: white;
+            padding: 10px;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+        
+        .carousel-item:hover .carousel-item-overlay {
+            opacity: 1;
+        }
+        
+        .carousel-controls {
+            position: absolute;
+            top: 50%;
+            width: 100%;
+            display: flex;
+            justify-content: space-between;
+            transform: translateY(-50%);
+            z-index: 10;
+        }
+        
+        .carousel-control {
+            background-color: rgba(255, 255, 255, 0.7);
+            color: #333;
+            border: none;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            margin: 0 10px;
+            transition: background-color 0.3s ease;
+        }
+        
+        .carousel-control:hover {
+            background-color: rgba(255, 255, 255, 0.9);
+        }
+    </style>
+</head>
+<body>
+    <h1>Test Carosello Foto</h1>
+    
+    <div class="photo-carousel-container">
+        <div class="photo-carousel" id="photoCarousel">
+            {% for photo in random_photos %}
+            <a href="{% url 'public_album_detail' username=photo.album.user.username pk=photo.album.id %}?photo={{ photo.id }}" class="carousel-item">
+                <img src="{{ photo.image.url }}" alt="{{ photo.caption|default:'Foto' }}">
+                <div class="carousel-item-overlay">
+                    <p>{{ photo.caption|default:'Senza titolo' }}</p>
+                    <small>Album: {{ photo.album.title }} di {{ photo.album.user.username }}</small>
+                </div>
+            </a>
+            {% endfor %}
+        </div>
+        <div class="carousel-controls">
+            <button class="carousel-control prev-btn"><i class="fas fa-chevron-left"></i></button>
+            <button class="carousel-control next-btn"><i class="fas fa-chevron-right"></i></button>
+        </div>
+    </div>
+    
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const carousel = document.getElementById('photoCarousel');
+            const prevBtn = document.querySelector('.prev-btn');
+            const nextBtn = document.querySelector('.next-btn');
+            
+            if (carousel && prevBtn && nextBtn) {
+                const scrollAmount = 320; // Larghezza dell'elemento + margine
+                
+                prevBtn.addEventListener('click', function() {
+                    carousel.scrollBy({
+                        left: -scrollAmount,
+                        behavior: 'smooth'
+                    });
+                });
+                
+                nextBtn.addEventListener('click', function() {
+                    carousel.scrollBy({
+                        left: scrollAmount,
+                        behavior: 'smooth'
+                    });
+                });
+            }
+        });
+    </script>
+</body>
+</html>

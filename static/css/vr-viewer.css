@@ -1,0 +1,233 @@
+/**
+ * VR Photo Viewer styles
+ */
+
+/* VR Button on photos */
+.vr-view-button {
+    position: absolute;
+    bottom: 8px;
+    right: 8px;
+    width: 30px;
+    height: 30px;
+    border-radius: 0;
+    background-color: transparent;
+    color: white;
+    border: none;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    z-index: 1000;
+    transition: all 0.2s ease;
+    opacity: 0.6;
+    font-size: 16px;
+    text-shadow: 0 0 3px rgba(0, 0, 0, 0.7);
+}
+
+.vr-view-button:hover {
+    opacity: 1;
+    transform: scale(1.1);
+    background-color: transparent;
+}
+
+/* VR Container */
+.vr-photo-container {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 10000;
+    background-color: #000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.vr-canvas {
+    width: 100%;
+    height: 100%;
+}
+
+.vr-exit-button {
+    position: absolute;
+    top: 20px;
+    right: 20px;
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    background-color: rgba(0, 0, 0, 0.6);
+    color: white;
+    border: none;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    z-index: 10001;
+    font-size: 24px;
+}
+
+.vr-exit-button:hover {
+    background-color: rgba(0, 0, 0, 0.8);
+}
+
+/* Immersive fallback mode */
+.immersive-view {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 10000;
+    background-color: #000;
+    display: none;
+    align-items: center;
+    justify-content: center;
+}
+
+.immersive-img {
+    max-width: 100%;
+    max-height: 100%;
+    object-fit: contain;
+    border-radius: 10px;
+}
+
+.immersive-close-btn {
+    position: absolute;
+    top: 20px;
+    right: 20px;
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    background-color: rgba(0, 0, 0, 0.6);
+    color: white;
+    border: none;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    z-index: 10001;
+    font-size: 24px;
+}
+
+.immersive-close-btn:hover {
+    background-color: rgba(0, 0, 0, 0.8);
+}
+
+/* When immersive mode is active */
+body.immersive-mode-active {
+    overflow: hidden;
+}
+
+/* Stili specifici per visori VR */
+body.vr-headset-mode {
+    background-color: #000;
+}
+
+/* Modalità immersiva ottimizzata per VR */
+.immersive-view.vr-optimized {
+    background-color: #000;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 10000;
+}
+
+.immersive-view.vr-optimized .immersive-img {
+    max-width: 100%;
+    max-height: 100%;
+    object-fit: contain;
+    border-radius: 0;
+    transform-origin: center center;
+    transition: transform 0.1s ease-out;
+}
+
+/* Stile per dispositivi VR */
+@media (min-width: 1800px) {
+    .immersive-view.vr-optimized .immersive-img {
+        transform: scale(1.2);
+        border-radius: 0;
+        box-shadow: 0 0 200px rgba(0, 0, 0, 0.8);
+    }
+    
+    .immersive-view.vr-optimized .immersive-close-btn {
+        width: 80px;
+        height: 80px;
+        font-size: 40px;
+        top: 40px;
+        right: 40px;
+    }
+}
+
+/* Flat screen effect for immersive mode */
+@media (min-width: 1200px) {
+    .immersive-img {
+        border-radius: 0;
+        box-shadow: 0 0 100px rgba(255, 255, 255, 0.1);
+        transform: none; /* Rimuove l'inclinazione */
+    }
+}
+
+/* Navigation buttons in immersive view */
+.immersive-nav-btn {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    background-color: rgba(0, 0, 0, 0.3);
+    color: white;
+    border: none;
+    width: 50px;
+    height: 80px;
+    font-size: 24px;
+    cursor: pointer;
+    z-index: 10001;
+    opacity: 0.6;
+    transition: opacity 0.3s, background-color 0.3s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.immersive-nav-btn:hover {
+    opacity: 1;
+    background-color: rgba(0, 0, 0, 0.6);
+}
+
+.immersive-prev-btn {
+    left: 20px;
+    border-radius: 0 5px 5px 0;
+}
+
+.immersive-next-btn {
+    right: 20px;
+    border-radius: 5px 0 0 5px;
+}
+
+/* VR not supported message */
+.vr-not-supported {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background-color: rgba(0, 0, 0, 0.8);
+    color: white;
+    padding: 20px;
+    border-radius: 10px;
+    text-align: center;
+    z-index: 10002;
+    max-width: 80%;
+}
+
+/* Adjust for VR headsets */
+@media (max-width: 600px) {
+    .vr-view-button {
+        width: 50px;
+        height: 50px;
+        font-size: 24px;
+    }
+}

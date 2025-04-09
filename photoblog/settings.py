@@ -25,7 +25,7 @@ SECRET_KEY = 'django-insecure-9oy)lgrh9bxr7ehpvfl26v6j0a-=*o9iqedylwpbyblka81az)
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ['*']
 
 
 # Application definition
@@ -50,6 +50,7 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    'blog.mobile_middleware.MobileRedirectMiddleware',  # Middleware per il reindirizzamento mobile
 ]
 
 ROOT_URLCONF = 'photoblog.urls'

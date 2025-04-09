@@ -1,0 +1,36 @@
+{% extends "blog/mobile_base.html" %}
+{% load static %}
+
+{% block title %}{{ post.title }} - Photo Blog{% endblock %}
+
+{% block mobile_content %}
+<div class="mobile-post-detail">
+    <div class="mobile-post-header">
+        <h1 class="mobile-post-title">{{ post.title }}</h1>
+        <div class="mobile-post-meta">
+            <span class="mobile-post-author">{{ post.user.username }}</span>
+            <span class="mobile-post-date">{{ post.created_at|date:"d/m/Y" }}</span>
+        </div>
+        
+        {% if user.is_authenticated and user == post.user %}
+        <div class="mobile-post-actions">
+            <a href="{% url 'post_edit' slug=post.slug %}" class="mobile-btn mobile-btn-sm mobile-btn-primary">
+                <i class="fas fa-edit"></i> Modifica
+            </a>
+        </div>
+        {% endif %}
+    </div>
+    
+    <div class="mobile-post-content">
+        {{ post.content|safe }}
+    </div>
+    
+    {% if user.is_authenticated and user == post.user %}
+    <div class="mobile-post-admin-actions">
+        <a href="{% url 'post_list' %}" class="mobile-btn mobile-btn-outline">
+            <i class="fas fa-arrow-left"></i> Torna ai post
+        </a>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

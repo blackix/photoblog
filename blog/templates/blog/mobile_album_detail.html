@@ -1,0 +1,136 @@
+{% extends "blog/mobile_base.html" %}
+{% load static %}
+
+{% block title %}{{ album.title }} - Photo Blog{% endblock %}
+
+{% block mobile_content %}
+<div class="mobile-album-detail">
+    <h2 class="mobile-page-title">{{ album.title }}</h2>
+    <p class="mobile-album-description">{{ album.description }}</p>
+    
+    <div class="mobile-album-actions">
+        <a href="{% url 'upload_photos' album_id=album.id %}" class="mobile-btn mobile-btn-primary">
+            <i class="fas fa-upload"></i> Carica Foto
+        </a>
+        <a href="{% url 'delete_album' album_id=album.id %}" class="mobile-btn mobile-btn-danger" onclick="return confirm('Sei sicuro di voler eliminare questo album?');">
+            <i class="fas fa-trash"></i> Elimina Album
+        </a>
+    </div>
+    
+    {% if photos %}
+    <div class="mobile-photo-grid">
+        {% for photo in photos %}
+        <div class="mobile-photo-thumbnail" data-photo-id="{{ photo.id }}">
+            <img src="{{ photo.image.url }}" alt="{{ photo.caption|default:'Foto' }}">
+            <div class="mobile-photo-overlay">
+                <button class="mobile-photo-edit-btn" data-photo-id="{{ photo.id }}">
+                    <i class="fas fa-edit"></i>
+                </button>
+                <button class="mobile-photo-delete-btn" data-photo-id="{{ photo.id }}">
+                    <i class="fas fa-trash"></i>
+                </button>
+                <button class="vr-view-button" title="Visualizza in modalità VR" data-photo-url="{{ photo.image.url }}">
+                    <i class="fas fa-vr-cardboard"></i>
+                </button>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% else %}
+    <div class="mobile-empty-album">
+        <p>Questo album è vuoto.</p>
+        <a href="{% url 'upload_photos' album_id=album.id %}" class="mobile-btn mobile-btn-primary">
+            <i class="fas fa-upload"></i> Carica le tue prime foto
+        </a>
+    </div>
+    {% endif %}
+</div>
+
+<!-- Modal per modifica didascalia -->
+<div class="mobile-modal" id="editCaptionModal">
+    <div class="mobile-modal-content">
+        <div class="mobile-modal-header">
+            <h3>Modifica Didascalia</h3>
+            <button class="mobile-modal-close">&times;</button>
+        </div>
+        <div class="mobile-modal-body">
+            <form id="captionForm">
+                <input type="hidden" id="photoId">
+                <div class="mobile-form-group">
+                    <label for="caption">Didascalia</label>
+                    <textarea id="caption" class="mobile-form-control"></textarea>
+                </div>
+                <button type="submit" class="mobile-btn mobile-btn-primary mobile-btn-block">Salva</button>
+            </form>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+$(document).ready(function() {
+    // Apertura del modal per modifica didascalia
+    $('.mobile-photo-edit-btn').on('click', function(e) {
+        e.stopPropagation();
+        const photoId = $(this).data('photo-id');
+        
+        // Carica i dati della foto
+        $.ajax({
+            url: `/api/photo/${photoId}/metadata/`,
+            method: 'GET',
+            success: function(data) {
+                $('#photoId').val(photoId);
+                $('#caption').val(data.caption || '');
+                $('#editCaptionModal').addClass('show');
+            }
+        });
+    });
+    
+    // Chiusura del modal
+    $('.mobile-modal-close').on('click', function() {
+        $('#editCaptionModal').removeClass('show');
+    });
+    
+    // Invio del form per aggiornare la didascalia
+    $('#captionForm').on('submit', function(e) {
+        e.preventDefault();
+        const photoId = $('#photoId').val();
+        const caption = $('#caption').val();
+        
+        $.ajax({
+            url: `/photos/${photoId}/update-caption/`,
+            method: 'POST',
+            data: {
+                'caption': caption,
+                'csrfmiddlewaretoken': $('meta[name="csrf-token"]').attr('content')
+            },
+            success: function() {
+                $('#editCaptionModal').removeClass('show');
+                // Ricarica la pagina per vedere le modifiche
+                location.reload();
+            }
+        });
+    });
+    
+    // Eliminazione foto
+    $('.mobile-photo-delete-btn').on('click', function(e) {
+        e.stopPropagation();
+        if (confirm('Sei sicuro di voler eliminare questa foto?')) {
+            const photoId = $(this).data('photo-id');
+            window.location.href = `/m/photo/${photoId}/delete/`;
+        }
+    });
+    
+    // Visualizzazione foto in VR
+    $('.vr-view-button').on('click', function(e) {
+        e.stopPropagation();
+        const photoUrl = $(this).data('photo-url');
+        if (window.vrPhotoViewer) {
+            window.vrPhotoViewer.openPhotoInVR(photoUrl);
+        }
+    });
+});
+</script>
+{% endblock %}

@@ -1,0 +1,48 @@
+{% extends "blog/mobile_base.html" %}
+{% load static %}
+
+{% block title %}I miei Post - Photo Blog{% endblock %}
+
+{% block mobile_content %}
+<div class="mobile-post-list">
+    <h2 class="mobile-page-title">I miei Post</h2>
+    
+    {% if posts %}
+        <div class="mobile-posts-container">
+            {% for post in posts %}
+                <div class="mobile-post-card">
+                    <h3 class="mobile-post-title">{{ post.title }}</h3>
+                    <div class="mobile-post-meta">
+                        <span class="mobile-post-date">{{ post.created_at|date:"d/m/Y" }}</span>
+                        <span class="mobile-post-status {% if post.published %}mobile-post-published{% else %}mobile-post-draft{% endif %}">
+                            {% if post.published %}Pubblicato{% else %}Bozza{% endif %}
+                        </span>
+                    </div>
+                    <div class="mobile-post-excerpt">
+                        {{ post.content|truncatewords:30 }}
+                    </div>
+                    <div class="mobile-post-actions">
+                        <a href="{% url 'mobile_post_detail' username=user.username slug=post.slug %}" class="mobile-btn mobile-btn-sm mobile-btn-outline">
+                            <i class="fas fa-eye"></i> Visualizza
+                        </a>
+                        <a href="{% url 'post_edit' slug=post.slug %}" class="mobile-btn mobile-btn-sm mobile-btn-primary">
+                            <i class="fas fa-edit"></i> Modifica
+                        </a>
+                        <a href="{% url 'post_delete' slug=post.slug %}" class="mobile-btn mobile-btn-sm mobile-btn-danger" onclick="return confirm('Sei sicuro di voler eliminare questo post?');">
+                            <i class="fas fa-trash"></i> Elimina
+                        </a>
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+    {% else %}
+        <div class="mobile-empty-message">
+            <p>Non hai ancora creato nessun post.</p>
+        </div>
+    {% endif %}
+    
+    <a href="{% url 'post_create' %}" class="mobile-btn mobile-btn-primary mobile-btn-block mobile-floating-btn">
+        <i class="fas fa-plus"></i> Nuovo Post
+    </a>
+</div>
+{% endblock %}

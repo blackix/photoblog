@@ -1,0 +1,88 @@
+{% extends "blog/mobile_base.html" %}
+{% load static %}
+
+{% block title %}Dashboard - Photo Blog{% endblock %}
+
+{% block mobile_content %}
+<div class="mobile-dashboard">
+    {% if show_welcome %}
+    <div class="mobile-welcome-alert">
+        <h4>Benvenuto nel tuo nuovo Photo Blog!</h4>
+        <p>Per iniziare:</p>
+        <ol>
+            <li>Vai nelle <a href="{% url 'settings' %}">Impostazioni</a> per personalizzare il tuo blog</li>
+            <li>Crea il tuo primo album</li>
+            <li>Carica le tue foto</li>
+            <li>Quando sei pronto, pubblica il tuo blog dalle impostazioni</li>
+        </ol>
+    </div>
+    {% endif %}
+    
+    <div class="mobile-card">
+        <h5 class="mobile-card-title">Stato del Blog</h5>
+        <p>
+            Il tuo blog è attualmente 
+            {% if settings.is_published %}
+                <span class="mobile-badge mobile-badge-success">Pubblicato</span>
+                <a href="{% url 'mobile_blog_view' username=user.username %}" class="mobile-btn mobile-btn-outline">Visualizza Blog</a>
+                <br>
+                <small class="mobile-text-muted">Il tuo blog è accessibile all'indirizzo: /m/blog/{{ user.username }}</small>
+            {% else %}
+                <span class="mobile-badge mobile-badge-warning">Non Pubblicato</span>
+                <small class="mobile-text-muted">Vai nelle impostazioni per pubblicare il tuo blog</small>
+            {% endif %}
+        </p>
+    </div>
+    
+    <div class="mobile-card">
+        <h5 class="mobile-card-title">I tuoi Album</h5>
+        {% if albums %}
+            <div class="mobile-albums-grid">
+                {% for album in albums %}
+                <div class="mobile-album-card">
+                    {% with first_photo=album.photos.first %}
+                    {% if first_photo %}
+                    <div class="mobile-album-thumbnail">
+                        <img src="{{ first_photo.image.url }}" alt="{{ album.title }}">
+                    </div>
+                    {% endif %}
+                    {% endwith %}
+                    <h6>{{ album.title }}</h6>
+                    <p class="mobile-album-info">{{ album.photos.count }} foto</p>
+                    <div class="mobile-album-actions">
+                        <a href="{% url 'mobile_album_detail' pk=album.id %}" class="mobile-btn mobile-btn-sm">Visualizza</a>
+                        <a href="{% url 'upload_photos' album_id=album.id %}" class="mobile-btn mobile-btn-sm">Carica foto</a>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            <a href="{% url 'album_create' %}" class="mobile-btn mobile-btn-primary mobile-btn-block mt-3">Crea Nuovo Album</a>
+        {% else %}
+            <p class="mobile-empty-message">Non hai ancora creato album.</p>
+            <a href="{% url 'album_create' %}" class="mobile-btn mobile-btn-primary mobile-btn-block">Crea il tuo primo Album</a>
+        {% endif %}
+    </div>
+    
+    <div class="mobile-card">
+        <h5 class="mobile-card-title">I tuoi Post</h5>
+        {% if posts %}
+            <div class="mobile-posts-list">
+                {% for post in posts %}
+                <div class="mobile-post-item">
+                    <h6>{{ post.title }}</h6>
+                    <p class="mobile-post-date">{{ post.created_at|date:"d/m/Y" }}</p>
+                    <div class="mobile-post-actions">
+                        <a href="{% url 'post_detail' username=user.username slug=post.slug %}" class="mobile-btn mobile-btn-sm">Visualizza</a>
+                        <a href="{% url 'post_edit' slug=post.slug %}" class="mobile-btn mobile-btn-sm">Modifica</a>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            <a href="{% url 'post_create' %}" class="mobile-btn mobile-btn-primary mobile-btn-block mt-3">Crea Nuovo Post</a>
+        {% else %}
+            <p class="mobile-empty-message">Non hai ancora creato post.</p>
+            <a href="{% url 'post_create' %}" class="mobile-btn mobile-btn-primary mobile-btn-block">Crea il tuo primo Post</a>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
