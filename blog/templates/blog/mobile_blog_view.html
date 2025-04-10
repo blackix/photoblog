@@ -6,7 +6,11 @@
 {% block mobile_content %}
 <div class="mobile-blog-view">
     <div class="mobile-blog-header">
-        <h1>{{ blog_owner.username }}</h1>
+        <div class="d-flex align-items-center">
+            <h1 class="mb-0">{{ blog_owner.username }}</h1>
+            <img src="{% static 'logo_foto.svg' %}" alt="Blogix Logo" class="logo-light ms-2" style="height: 24px;">
+            <img src="{% static 'logo_white.svg' %}" alt="Blogix Logo" class="logo-dark ms-2" style="height: 24px;">
+        </div>
         <p>{{ settings.tagline }}</p>
     </div>
     

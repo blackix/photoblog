@@ -350,7 +350,11 @@
      data-toggle-like-url-base="{% url 'toggle_like_photo' photo_id=0 %}"
      data-is-authenticated="{{ user.is_authenticated|yesno:'true,false' }}">
     <div class="blog-info-header mb-4">
-        <h1 class="blog-name">Blog di {{ blog_user.username }}</h1>
+        <div class="d-flex align-items-center">
+            <h1 class="blog-name mb-0">Blog di {{ blog_user.username }}</h1>
+            <img src="{% static 'logo_foto.svg' %}" alt="Blogix Logo" class="logo-light ms-2" style="height: 30px;">
+            <img src="{% static 'logo_white.svg' %}" alt="Blogix Logo" class="logo-dark ms-2" style="height: 30px;">
+        </div>
         <p class="blog-tagline">{{ blog_settings.tagline }}</p>
     </div>
 

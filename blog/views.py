@@ -135,82 +135,136 @@ def album_detail(request, pk):
 @require_POST
 def upload_photos(request, album_id):
     album = get_object_or_404(Album, id=album_id, user=request.user)
-    if request.FILES.getlist('photos'):
-        for uploaded_file in request.FILES.getlist('photos'):
+    
+    # Log per debug
+    print(f"Upload photos request received for album {album_id}")
+    print(f"Files in request: {len(request.FILES.getlist('photos'))}")
+    
+    if not request.FILES.getlist('photos'):
+        print("No files found in request")
+        return JsonResponse({'status': 'error', 'message': 'No files received'}, status=400)
+    
+    uploaded_count = 0
+    errors = []
+    
+    for uploaded_file in request.FILES.getlist('photos'):
+        try:
+            print(f"Processing file: {uploaded_file.name}, size: {uploaded_file.size}")
+            
+            # Verifica che il file sia un'immagine valida
             try:
                 image = Image.open(uploaded_file)
-                metadata = {}
-                
-                # Get basic image info
-                metadata['format'] = image.format
-                metadata['mode'] = image.mode
-                metadata['size'] = image.size
-                
-                # Extract EXIF data
-                if hasattr(image, '_getexif'):
-                    exif = image._getexif()
-                    if exif:
-                        for tag_id, value in exif.items():
-                            tag = TAGS.get(tag_id, tag_id)
-                            
-                            # Converti tipi non serializzabili in tipi serializzabili
-                            if isinstance(value, bytes):
-                                try:
-                                    value = value.decode()
-                                except UnicodeDecodeError:
-                                    value = str(value)
-                            # Gestisci il tipo IFDRational e altri tipi non serializzabili
-                            elif not isinstance(value, (str, int, float, bool, list, dict, type(None))):
-                                value = str(value)
-                                
-                            metadata[tag] = value
-                        
-                        # Extract camera specific info
-                        camera_info = {}
-                        if 'Make' in metadata:
-                            camera_info['Marca'] = metadata['Make']
-                        if 'Model' in metadata:
-                            camera_info['Modello'] = metadata['Model']
-                        if 'FNumber' in metadata:
-                            camera_info['Apertura'] = f"f/{str(metadata['FNumber'])}"
-                        if 'FocalLength' in metadata:
-                            camera_info['Lunghezza Focale'] = f"{str(metadata['FocalLength'])}mm"
-                        if 'ExposureTime' in metadata:
-                            try:
-                                exposure_time = float(str(metadata['ExposureTime']))
-                                camera_info['Tempo Esposizione'] = f"1/{int(1/exposure_time)}s" if exposure_time > 0 else f"{exposure_time}s"
-                            except (ValueError, TypeError, ZeroDivisionError):
-                                camera_info['Tempo Esposizione'] = f"{str(metadata['ExposureTime'])}s"
-                        if 'ISOSpeedRatings' in metadata:
-                            camera_info['ISO'] = metadata['ISOSpeedRatings']
-                        
-                        metadata['CameraInfo'] = camera_info
-                
-                # Extract GPS info if available
-                if 'GPSInfo' in metadata:
-                    gps_info = {}
-                    for key in metadata['GPSInfo'].keys():
-                        decode = GPSTAGS.get(key, key)
-                        gps_value = metadata['GPSInfo'][key]
+                image.verify()  # Verifica che l'immagine sia valida
+                image = Image.open(uploaded_file)  # Riapri dopo verify
+            except Exception as e:
+                print(f"Invalid image file: {str(e)}")
+                errors.append(f"File {uploaded_file.name} non è un'immagine valida: {str(e)}")
+                continue
+            
+            metadata = {}
+            
+            # Get basic image info
+            metadata['format'] = image.format
+            metadata['mode'] = image.mode
+            metadata['size'] = image.size
+            
+            # Extract EXIF data
+            if hasattr(image, '_getexif'):
+                exif = image._getexif()
+                if exif:
+                    for tag_id, value in exif.items():
+                        tag = TAGS.get(tag_id, tag_id)
                         
                         # Converti tipi non serializzabili in tipi serializzabili
-                        if not isinstance(gps_value, (str, int, float, bool, list, dict, type(None))):
-                            gps_value = str(gps_value)
+                        if isinstance(value, bytes):
+                            try:
+                                value = value.decode()
+                            except UnicodeDecodeError:
+                                value = str(value)
+                        # Gestisci il tipo IFDRational e altri tipi non serializzabili
+                        elif not isinstance(value, (str, int, float, bool, list, dict, type(None))):
+                            value = str(value)
                             
-                        gps_info[decode] = gps_value
-                    metadata['GPSInfo'] = gps_info
-                
-                # Create photo with metadata
-                photo = Photo.objects.create(
-                    album=album,
-                    image=uploaded_file,
-                    metadata=metadata
-                )
-            except Exception as e:
-                print(f'Error processing {uploaded_file.name}: {str(e)}')
-                continue
-        return JsonResponse({'status': 'success'})
-    return JsonResponse({'status': 'error'}, status=400)
+                        metadata[tag] = value
+                    
+                    # Extract camera specific info
+                    camera_info = {}
+                    if 'Make' in metadata:
+                        camera_info['Marca'] = metadata['Make']
+                    if 'Model' in metadata:
+                        camera_info['Modello'] = metadata['Model']
+                    if 'FNumber' in metadata:
+                        camera_info['Apertura'] = f"f/{str(metadata['FNumber'])}"
+                    if 'FocalLength' in metadata:
+                        camera_info['Lunghezza Focale'] = f"{str(metadata['FocalLength'])}mm"
+                    if 'ExposureTime' in metadata:
+                        try:
+                            exposure_time = float(str(metadata['ExposureTime']))
+                            camera_info['Tempo Esposizione'] = f"1/{int(1/exposure_time)}s" if exposure_time > 0 else f"{exposure_time}s"
+                        except (ValueError, TypeError, ZeroDivisionError):
+                            camera_info['Tempo Esposizione'] = f"{str(metadata['ExposureTime'])}s"
+                    if 'ISOSpeedRatings' in metadata:
+                        camera_info['ISO'] = metadata['ISOSpeedRatings']
+                    
+                    metadata['CameraInfo'] = camera_info
+            
+            # Extract GPS info if available
+            if 'GPSInfo' in metadata:
+                gps_info = {}
+                for key in metadata['GPSInfo'].keys():
+                    decode = GPSTAGS.get(key, key)
+                    gps_value = metadata['GPSInfo'][key]
+                    
+                    # Converti tipi non serializzabili in tipi serializzabili
+                    if not isinstance(gps_value, (str, int, float, bool, list, dict, type(None))):
+                        gps_value = str(gps_value)
+                        
+                    gps_info[decode] = gps_value
+                metadata['GPSInfo'] = gps_info
+            
+            # Create photo with metadata
+            photo = Photo.objects.create(
+                album=album,
+                image=uploaded_file,
+                metadata=metadata
+            )
+            
+            uploaded_count += 1
+            print(f"Successfully uploaded photo: {photo.id}")
+            
+        except Exception as e:
+            error_message = f'Error processing {uploaded_file.name}: {str(e)}'
+            print(error_message)
+            errors.append(error_message)
+            continue
+    
+    if uploaded_count > 0:
+        response_data = {
+            'status': 'success',
+            'message': f'Successfully uploaded {uploaded_count} photos',
+            'uploaded_count': uploaded_count
+        }
+        if errors:
+            response_data['errors'] = errors
+            response_data['warning'] = 'Some photos could not be uploaded'
+        
+        print(f"Upload completed: {response_data}")
+        
+        # Verifica se la richiesta proviene dalla versione mobile
+        if 'HTTP_REFERER' in request.META and '/m/' in request.META['HTTP_REFERER']:
+            # Reindirizza alla versione mobile dell'album
+            return redirect('mobile_album_detail', pk=album.id)
+        else:
+            # Reindirizza alla versione desktop dell'album
+            return redirect('album_detail', pk=album.id)
+    else:
+        error_response = {
+            'status': 'error',
+            'message': 'No photos were uploaded',
+            'errors': errors
+        }
+        print(f"Upload failed: {error_response}")
+        return JsonResponse(error_response, status=400)
 
 @login_required
 @require_POST

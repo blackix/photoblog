@@ -9,19 +9,29 @@
     <p class="mobile-album-description">{{ album.description }}</p>
     
     <div class="mobile-album-actions">
-        <a href="{% url 'upload_photos' album_id=album.id %}" class="mobile-btn mobile-btn-primary">
-            <i class="fas fa-upload"></i> Carica Foto
-        </a>
-        <a href="{% url 'delete_album' album_id=album.id %}" class="mobile-btn mobile-btn-danger" onclick="return confirm('Sei sicuro di voler eliminare questo album?');">
+        <form id="mobile-upload-form" action="{% url 'mobile_upload_photos' album_id=album.id %}" method="post" enctype="multipart/form-data">
+            {% csrf_token %}
+            <label for="mobile-photo-upload" class="mobile-btn mobile-btn-primary">
+                <i class="fas fa-upload"></i> Carica Foto
+            </label>
+            <input type="file" id="mobile-photo-upload" name="photos" multiple accept="image/*" style="display: none;">
+        </form>
+        
+        <button id="delete-album-btn" class="mobile-btn mobile-btn-danger" data-album-id="{{ album.id }}">
             <i class="fas fa-trash"></i> Elimina Album
-        </a>
+        </button>
+    </div>
+    
+    <div id="upload-progress" class="mobile-progress-container" style="display: none;">
+        <div class="mobile-progress-bar"></div>
+        <div class="mobile-progress-text">0%</div>
     </div>
     
     {% if photos %}
     <div class="mobile-photo-grid">
         {% for photo in photos %}
         <div class="mobile-photo-thumbnail" data-photo-id="{{ photo.id }}">
-            <img src="{{ photo.image.url }}" alt="{{ photo.caption|default:'Foto' }}">
+            <img src="{{ photo.image.url }}?t={{ photo.upload_date|date:'U' }}" alt="{{ photo.caption|default:'Foto' }}">
             <div class="mobile-photo-overlay">
                 <button class="mobile-photo-edit-btn" data-photo-id="{{ photo.id }}">
                     <i class="fas fa-edit"></i>
@@ -29,7 +39,7 @@
                 <button class="mobile-photo-delete-btn" data-photo-id="{{ photo.id }}">
                     <i class="fas fa-trash"></i>
                 </button>
-                <button class="vr-view-button" title="Visualizza in modalità VR" data-photo-url="{{ photo.image.url }}">
+                <button class="vr-view-button" title="Visualizza in modalità VR" data-photo-url="{{ photo.image.url }}?t={{ photo.upload_date|date:'U' }}">
                     <i class="fas fa-vr-cardboard"></i>
                 </button>
             </div>
@@ -39,9 +49,13 @@
     {% else %}
     <div class="mobile-empty-album">
         <p>Questo album è vuoto.</p>
-        <a href="{% url 'upload_photos' album_id=album.id %}" class="mobile-btn mobile-btn-primary">
-            <i class="fas fa-upload"></i> Carica le tue prime foto
-        </a>
+        <form id="mobile-upload-form-empty" action="{% url 'mobile_upload_photos' album_id=album.id %}" method="post" enctype="multipart/form-data">
+            {% csrf_token %}
+            <label for="mobile-photo-upload-empty" class="mobile-btn mobile-btn-primary">
+                <i class="fas fa-upload"></i> Carica le tue prime foto
+            </label>
+            <input type="file" id="mobile-photo-upload-empty" name="photos" multiple accept="image/*" style="display: none;">
+        </form>
     </div>
     {% endif %}
 </div>
@@ -114,12 +128,68 @@ $(document).ready(function() {
         });
     });
     
+    // Gestione caricamento foto con approccio diretto
+    $('#mobile-photo-upload').on('change', function() {
+        const files = this.files;
+        if (files.length > 0) {
+            console.log('Foto selezionate, invio form...');
+            // Mostra un messaggio di caricamento
+            alert('Caricamento in corso... Attendi il completamento.');
+            // Invia il form direttamente
+            $('#mobile-upload-form').submit();
+        }
+    });
+    
+    // Gestione per il caricamento nella sezione album vuoto
+    $('#mobile-photo-upload-empty').on('change', function() {
+        const files = this.files;
+        if (files.length > 0) {
+            console.log('Foto selezionate da album vuoto, invio form...');
+            // Mostra un messaggio di caricamento
+            alert('Caricamento in corso... Attendi il completamento.');
+            // Invia il form direttamente
+            $('#mobile-upload-form-empty').submit();
+        }
+    });
+    
+    // Gestione eliminazione album
+    $('#delete-album-btn').on('click', function() {
+        const albumId = $(this).data('album-id');
+        if (confirm('Sei sicuro di voler eliminare questo album e tutte le sue foto?')) {
+            $.ajax({
+                url: `/m/album/${albumId}/delete/`,
+                type: 'POST',
+                headers: {
+                    'X-CSRFToken': '{{ csrf_token }}'
+                },
+                success: function() {
+                    window.location.href = '/m/dashboard/';
+                },
+                error: function() {
+                    alert('Errore durante l\'eliminazione dell\'album');
+                }
+            });
+        }
+    });
+    
     // Eliminazione foto
     $('.mobile-photo-delete-btn').on('click', function(e) {
         e.stopPropagation();
+        const photoId = $(this).data('photo-id');
         if (confirm('Sei sicuro di voler eliminare questa foto?')) {
-            const photoId = $(this).data('photo-id');
-            window.location.href = `/m/photo/${photoId}/delete/`;
+            $.ajax({
+                url: `/photo/${photoId}/delete/`,
+                type: 'POST',
+                headers: {
+                    'X-CSRFToken': '{{ csrf_token }}'
+                },
+                success: function() {
+                    location.reload();
+                },
+                error: function() {
+                    alert('Errore durante l\'eliminazione della foto');
+                }
+            });
         }
     });
     

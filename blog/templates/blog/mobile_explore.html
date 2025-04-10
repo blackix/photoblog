@@ -51,7 +51,11 @@
                         {% endif %}
                     </div>
                     <div class="mobile-blog-name">
-                        <p>{{ blog.username }}</p>
+                        <div class="d-flex align-items-center">
+                            <img src="{% static 'logo_foto.svg' %}" alt="Blogix Logo" class="logo-light me-1" style="height: 16px;">
+                            <img src="{% static 'logo_white.svg' %}" alt="Blogix Logo" class="logo-dark me-1" style="height: 16px;">
+                            <p class="mb-0">{{ blog.username }}</p>
+                        </div>
                     </div>
                 </a>
             {% endfor %}

@@ -31,6 +31,54 @@
     --mobile-input-bg: #2a2a2a;
 }
 
+/* Logo styles for light/dark mode */
+.logo-light {
+    display: block;
+}
+
+.logo-dark {
+    display: none;
+}
+
+[data-theme="dark"] .logo-light {
+    display: none;
+}
+
+[data-theme="dark"] .logo-dark {
+    display: block;
+}
+
+/* Progress bar styles */
+.mobile-progress-container {
+    width: 100%;
+    background-color: var(--mobile-light-gray);
+    border-radius: 4px;
+    margin: 15px 0;
+    overflow: hidden;
+    position: relative;
+    height: 20px;
+}
+
+.mobile-progress-bar {
+    height: 100%;
+    background-color: var(--mobile-accent-color);
+    width: 0%;
+    transition: width 0.3s ease;
+}
+
+.mobile-progress-text {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    text-align: center;
+    line-height: 20px;
+    color: #fff;
+    font-size: 12px;
+    font-weight: bold;
+    text-shadow: 0 0 2px rgba(0,0,0,0.5);
+}
+
 /* Reset e stili di base */
 .mobile-body {
     font-family: 'Source Sans Pro', sans-serif;

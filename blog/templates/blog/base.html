@@ -54,6 +54,23 @@
             transition: all 0.3s ease;
             font-family: 'Source Sans Pro', sans-serif;
         }
+        
+        /* Logo styles for light/dark mode */
+        .logo-light {
+            display: block;
+        }
+        
+        .logo-dark {
+            display: none;
+        }
+        
+        [data-theme="dark"] .logo-light {
+            display: none;
+        }
+        
+        [data-theme="dark"] .logo-dark {
+            display: block;
+        }
 
         h1, h2, h3, h4, h5, h6 {
             font-family: 'Playfair Display', serif;
@@ -730,7 +747,11 @@
                     </div>
                     
                     <a href="{% url 'home' %}" class="text-decoration-none">
-                        <h4>{{ user.blogsettings.blog_name }}</h4>
+                        <div class="d-flex align-items-center">
+                            <img src="{% static 'logo_foto.svg' %}" alt="Blogix Logo" class="logo-light me-2" style="height: 20px;">
+                            <img src="{% static 'logo_white.svg' %}" alt="Blogix Logo" class="logo-dark me-2" style="height: 20px;">
+                            <h4 class="mb-0">{{ user.blogsettings.blog_name }}</h4>
+                        </div>
                     </a>
                     <p class="text-muted">{{ user.blogsettings.tagline }}</p>
                 </div>
@@ -775,7 +796,10 @@
                 
                 <!-- Footer con crediti - bloccato in basso -->
                 <div class="text-center mt-auto mb-2 sidebar-full" style="font-size: 0.8em; color: #888;">
-                    <img src="{% static 'logo.png' %}" alt="Blogix Logo" style="height: 30px; margin-bottom: 8px;">
+                    <div class="d-flex justify-content-center">
+                        <img src="{% static 'logo_foto.svg' %}" alt="Blogix Logo" class="logo-light" style="height: 30px; margin-bottom: 8px;">
+                        <img src="{% static 'logo_white.svg' %}" alt="Blogix Logo" class="logo-dark" style="height: 30px; margin-bottom: 8px;">
+                    </div>
                     <div>blogix is a blackix platform</div>
                     <div>all rights reserved</div>
                 </div>
@@ -833,7 +857,10 @@
                 
                 <!-- Footer con crediti - bloccato in basso -->
                 <div class="text-center mt-auto mb-2 sidebar-full" style="font-size: 0.8em; color: #888;">
-                    <img src="{% static 'logo.png' %}" alt="Blogix Logo" style="height: 30px; margin-bottom: 8px;">
+                    <div class="d-flex justify-content-center">
+                        <img src="{% static 'logo_foto.svg' %}" alt="Blogix Logo" class="logo-light" style="height: 30px; margin-bottom: 8px;">
+                        <img src="{% static 'logo_white.svg' %}" alt="Blogix Logo" class="logo-dark" style="height: 30px; margin-bottom: 8px;">
+                    </div>
                     <div>blogix is a blackix platform</div>
                     <div>all rights reserved</div>
                 </div>

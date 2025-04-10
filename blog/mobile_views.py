@@ -213,7 +213,14 @@ def mobile_album_detail(request, pk):
         return redirect('mobile_home')
     
     album = get_object_or_404(Album, pk=pk, user=request.user)
-    photos = Photo.objects.filter(album=album).order_by('-upload_date')
+    
+    # Forza un refresh dal database per assicurarsi di avere le foto più recenti
+    photos = Photo.objects.filter(album=album).order_by('-upload_date').select_related('album')
+    
+    # Log per debug
+    print(f"Mobile album detail view for album {pk} - Found {photos.count()} photos")
+    for photo in photos:
+        print(f"Photo ID: {photo.id}, Image URL: {photo.image.url}")
     
     context = {
         'album': album,
@@ -221,6 +228,78 @@ def mobile_album_detail(request, pk):
     }
     
     return render(request, 'blog/mobile_album_detail.html', context)
+
+def mobile_upload_photos(request, album_id):
+    """
+    Vista mobile per il caricamento delle foto
+    """
+    if not request.user.is_authenticated:
+        return redirect('mobile_home')
+    
+    album = get_object_or_404(Album, id=album_id, user=request.user)
+    
+    # Log per debug
+    print(f"Mobile upload photos request received for album {album_id}")
+    print(f"Files in request: {len(request.FILES.getlist('photos'))}")
+    
+    if not request.FILES.getlist('photos'):
+        print("No files found in request")
+        return redirect('mobile_album_detail', pk=album_id)
+    
+    uploaded_count = 0
+    errors = []
+    
+    for uploaded_file in request.FILES.getlist('photos'):
+        try:
+            print(f"Processing file: {uploaded_file.name}, size: {uploaded_file.size}")
+            
+            # Verifica che il file sia un'immagine valida
+            try:
+                from PIL import Image as PILImage
+                image = PILImage.open(uploaded_file)
+                image.verify()  # Verifica che l'immagine sia valida
+                image = PILImage.open(uploaded_file)  # Riapri dopo verify
+            except Exception as e:
+                print(f"Invalid image file: {str(e)}")
+                errors.append(f"File {uploaded_file.name} non è un'immagine valida: {str(e)}")
+                continue
+            
+            # Create photo with minimal metadata
+            photo = Photo.objects.create(
+                album=album,
+                image=uploaded_file,
+                metadata={}
+            )
+            
+            uploaded_count += 1
+            print(f"Successfully uploaded photo: {photo.id} to album {album_id}")
+            
+        except Exception as e:
+            error_message = f'Error processing {uploaded_file.name}: {str(e)}'
+            print(error_message)
+            errors.append(error_message)
+            continue
+    
+    # Reindirizza alla pagina dell'album dopo il caricamento
+    return redirect('mobile_album_detail', pk=album_id)
+
+def mobile_delete_album(request, album_id):
+    """
+    Vista mobile per l'eliminazione di un album
+    """
+    if not request.user.is_authenticated:
+        return redirect('mobile_home')
+    
+    album = get_object_or_404(Album, id=album_id, user=request.user)
+    
+    # Log per debug
+    print(f"Mobile delete album request received for album {album_id}")
+    
+    # Elimina l'album e tutte le sue foto
+    album.delete()
+    
+    # Reindirizza alla dashboard mobile
+    return redirect('mobile_dashboard')
 
 def mobile_delete_photo(request, photo_id):
     """
