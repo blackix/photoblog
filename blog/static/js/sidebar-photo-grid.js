@@ -7,43 +7,84 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Funzione per caricare le foto casuali tramite AJAX
     function loadRandomPhotos() {
+        console.log('Inizializzazione caricamento foto casuali');
+        
         // Controlla se ci sono foto salvate in sessionStorage
         const savedPhotos = sessionStorage.getItem('sidebarGridPhotos');
         const savedCurrentPhotos = sessionStorage.getItem('sidebarCurrentPhotos');
         
         if (savedPhotos) {
             // Usa le foto salvate
-            allPhotos = JSON.parse(savedPhotos);
-            console.log('Ripristinate foto salvate dalla sessionStorage');
-            
-            if (savedCurrentPhotos) {
-                // Ripristina le foto correnti senza aggiornare la griglia
-                const currentPhotos = JSON.parse(savedCurrentPhotos);
-                displaySavedPhotos(currentPhotos);
+            try {
+                allPhotos = JSON.parse(savedPhotos);
+                console.log('Ripristinate foto salvate dalla sessionStorage:', allPhotos.length, 'foto trovate');
+                
+                if (savedCurrentPhotos) {
+                    // Ripristina le foto correnti senza aggiornare la griglia
+                    try {
+                        const currentPhotos = JSON.parse(savedCurrentPhotos);
+                        console.log('Ripristinate foto correnti dalla sessionStorage:', currentPhotos.length, 'foto');
+                        displaySavedPhotos(currentPhotos);
+                        // Avvia il timer per la transizione
+                        startPhotoTransition();
+                        return;
+                    } catch (e) {
+                        console.error('Errore nel parsing delle foto correnti:', e);
+                    }
+                }
+                
+                // Inizializza la griglia con le prime 4 foto
+                updatePhotoGrid();
                 // Avvia il timer per la transizione
                 startPhotoTransition();
-                return;
+            } catch (e) {
+                console.error('Errore nel parsing delle foto salvate:', e);
+                // Se c'è un errore, carica nuove foto
+                fetchNewPhotos();
             }
-            
-            // Inizializza la griglia con le prime 4 foto
-            updatePhotoGrid();
-            // Avvia il timer per la transizione
-            startPhotoTransition();
         } else {
-            // Carica nuove foto dal server
-            fetch('/api/random-photos/?limit=20')
-                .then(response => response.json())
-                .then(data => {
+            console.log('Nessuna foto salvata in sessionStorage, caricamento dal server...');
+            fetchNewPhotos();
+        }
+    }
+    
+    // Funzione per caricare nuove foto dal server
+    function fetchNewPhotos() {
+        console.log('Chiamata API per foto casuali...');
+        // URL completo per debug
+        const apiUrl = window.location.origin + '/api/random-photos/?limit=20';
+        console.log('URL API:', apiUrl);
+        
+        fetch(apiUrl)
+            .then(response => {
+                console.log('Risposta API ricevuta, status:', response.status);
+                if (!response.ok) {
+                    throw new Error('Risposta API non valida: ' + response.status);
+                }
+                return response.json();
+            })
+            .then(data => {
+                console.log('Dati API ricevuti:', data);
+                if (data.photos && Array.isArray(data.photos)) {
                     allPhotos = data.photos;
+                    console.log('Foto caricate con successo:', allPhotos.length, 'foto');
                     // Salva le foto in sessionStorage
                     sessionStorage.setItem('sidebarGridPhotos', JSON.stringify(allPhotos));
                     // Inizializza la griglia con le prime 4 foto
                     updatePhotoGrid();
                     // Avvia il timer per la transizione
                     startPhotoTransition();
-                })
-                .catch(error => console.error('Errore nel caricamento delle foto casuali:', error));
-        }
+                } else {
+                    console.error('Formato dati API non valido:', data);
+                }
+            })
+            .catch(error => {
+                console.error('Errore nel caricamento delle foto casuali:', error);
+                // In caso di errore, mostra un messaggio nella console
+                document.querySelectorAll('.sidebar-photo-item').forEach(item => {
+                    console.log('Impostazione placeholder per errore API');
+                });
+            });
     }
     
     // Funzione per visualizzare le foto salvate senza animazione
@@ -75,10 +116,21 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Funzione per aggiornare la griglia di foto
     function updatePhotoGrid() {
+        console.log('Aggiornamento griglia foto...');
         const gridItems = document.querySelectorAll('.sidebar-photo-item');
+        console.log('Elementi griglia trovati:', gridItems.length);
         
-        // Se non ci sono abbastanza foto, non fare nulla
-        if (allPhotos.length < 4) return;
+        // Se non ci sono abbastanza foto, mostra un messaggio di debug
+        if (!allPhotos || allPhotos.length < 4) {
+            console.warn('Non ci sono abbastanza foto disponibili:', allPhotos ? allPhotos.length : 0);
+            // Continua comunque con le foto disponibili
+            if (!allPhotos || allPhotos.length === 0) {
+                console.error('Nessuna foto disponibile per la griglia');
+                return;
+            }
+        }
+        
+        console.log('Foto disponibili:', allPhotos.length);
         
         // Seleziona 4 foto casuali dall'array
         const randomPhotos = [];
@@ -92,44 +144,69 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         }
         
+        console.log('Foto selezionate per la griglia:', randomPhotos.length);
+        
         // Salva le foto correnti in sessionStorage
-        sessionStorage.setItem('sidebarCurrentPhotos', JSON.stringify(randomPhotos));
+        try {
+            sessionStorage.setItem('sidebarCurrentPhotos', JSON.stringify(randomPhotos));
+            console.log('Foto correnti salvate in sessionStorage');
+        } catch (e) {
+            console.error('Errore nel salvataggio delle foto correnti:', e);
+        }
         
         // Aggiorna le immagini nella griglia
         gridItems.forEach((item, index) => {
             if (index < randomPhotos.length) {
-                const photo = randomPhotos[index];
-                const img = item.querySelector('img');
-                const overlay = item.querySelector('.photo-overlay');
-                
-                // Aggiungi classe per l'animazione di fade out
-                img.classList.add('fade-out');
-                
-                // Dopo un ritardo più lungo per un crossfade lento, aggiorna l'immagine e fai il fade in
-                setTimeout(() => {
-                    img.src = photo.image_url;
-                    img.alt = photo.caption || 'Foto';
-                    item.dataset.photoId = photo.id;
-                    item.dataset.photoUrl = photo.image_url;
-                    item.dataset.albumId = photo.album_id;
-                    item.dataset.username = photo.username;
+                try {
+                    const photo = randomPhotos[index];
+                    console.log(`Aggiornamento elemento ${index+1}:`, photo.id, photo.image_url);
                     
-                    if (overlay) {
-                        overlay.innerHTML = `
-                            <span>${photo.album_title}</span>
-                            <span>${photo.username}</span>
-                        `;
+                    const img = item.querySelector('img');
+                    const overlay = item.querySelector('.photo-overlay');
+                    
+                    if (!img) {
+                        console.error(`Elemento img non trovato per l'item ${index+1}`);
+                        return;
                     }
                     
-                    // Rimuovi la classe fade-out e aggiungi fade-in
-                    img.classList.remove('fade-out');
-                    img.classList.add('fade-in');
+                    // Aggiungi gestione errori per il caricamento dell'immagine
+                    img.onerror = function() {
+                        console.error(`Errore caricamento immagine ${index+1}:`, photo.image_url);
+                        this.src = '/static/img/placeholder.jpg';
+                        this.alt = 'Immagine non disponibile';
+                    };
                     
-                    // Dopo l'animazione, rimuovi la classe fade-in
+                    // Aggiungi classe per l'animazione di fade out
+                    img.classList.add('fade-out');
+                    
+                    // Dopo un ritardo più lungo per un crossfade lento, aggiorna l'immagine e fai il fade in
                     setTimeout(() => {
-                        img.classList.remove('fade-in');
-                    }, 1500); // Durata più lunga per il fade-in
-                }, 1500); // Durata più lunga per il fade-out
+                        img.src = photo.image_url;
+                        img.alt = photo.caption || 'Foto';
+                        item.dataset.photoId = photo.id;
+                        item.dataset.photoUrl = `/blog/${photo.username}/`;
+                        item.dataset.albumId = photo.album_id;
+                        item.dataset.username = photo.username;
+                        
+                        if (overlay) {
+                            overlay.innerHTML = `
+                                <span>${photo.album_title || 'Album'}</span>
+                                <span>${photo.username || 'Utente'}</span>
+                            `;
+                        }
+                        
+                        // Rimuovi la classe fade-out e aggiungi fade-in
+                        img.classList.remove('fade-out');
+                        img.classList.add('fade-in');
+                        
+                        // Dopo l'animazione, rimuovi la classe fade-in
+                        setTimeout(() => {
+                            img.classList.remove('fade-in');
+                        }, 1500); // Durata più lunga per il fade-in
+                    }, 1500); // Durata più lunga per il fade-out
+                } catch (e) {
+                    console.error(`Errore nell'aggiornamento dell'elemento ${index+1}:`, e);
+                }
             }
         });
     }
