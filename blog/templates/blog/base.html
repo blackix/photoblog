@@ -11,6 +11,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;500;600&family=Source+Sans+Pro:wght@300;400;600&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="{% static 'css/vr-viewer.css' %}">
     <link rel="stylesheet" href="{% static 'css/mobile.css' %}">
+    <link rel="stylesheet" href="{% static 'css/sidebar-photo-grid.css' %}">
     <style>
         :root {
             --bg-color: #ffffff;
@@ -748,8 +749,6 @@
                     
                     <a href="{% url 'home' %}" class="text-decoration-none">
                         <div class="d-flex align-items-center">
-                            <img src="{% static 'logo_foto.svg' %}" alt="Blogix Logo" class="logo-light me-2" style="height: 20px;">
-                            <img src="{% static 'logo_white.svg' %}" alt="Blogix Logo" class="logo-dark me-2" style="height: 20px;">
                             <h4 class="mb-0">{{ user.blogsettings.blog_name }}</h4>
                         </div>
                     </a>
@@ -786,22 +785,30 @@
                     <a href="{% url 'post_create' %}" class="sidebar-icon" title="Nuovo Post"><i class="fas fa-plus"></i></a>
                 </div>
                 
-                <!-- Altri blog - sezione separata con spazio -->
-                <div class="mb-4" style="margin-bottom: 30px !important;">
+                {% include "blog/includes/sidebar_photo_grid.html" %}
+                
+                <!-- Pulsante Esplora sotto la mini galleria -->
+                <div class="mt-3 mb-3">
                     <a href="{% url 'all_blogs' %}" class="btn btn-dark sidebar-full w-100">
-                        <i class="fas fa-globe me-2"></i> Altri Blog
+                        <i class="fas fa-globe me-2"></i> Esplora
                     </a>
-                    <a href="{% url 'all_blogs' %}" class="sidebar-icon" title="Altri Blog"><i class="fas fa-globe"></i></a>
+                    <a href="{% url 'all_blogs' %}" class="sidebar-icon" title="Esplora"><i class="fas fa-globe"></i></a>
                 </div>
                 
                 <!-- Footer con crediti - bloccato in basso -->
                 <div class="text-center mt-auto mb-2 sidebar-full" style="font-size: 0.8em; color: #888;">
                     <div class="d-flex justify-content-center">
-                        <img src="{% static 'logo_foto.svg' %}" alt="Blogix Logo" class="logo-light" style="height: 30px; margin-bottom: 8px;">
-                        <img src="{% static 'logo_white.svg' %}" alt="Blogix Logo" class="logo-dark" style="height: 30px; margin-bottom: 8px;">
+                        {% if request.user.blogsettings.symbol_icon %}
+                            <div style="width: 30px; height: 30px; margin-bottom: 8px; display: flex; align-items: center; justify-content: center; overflow: hidden;">
+                                <img src="{{ request.user.blogsettings.symbol_icon.url }}" alt="Blog Icon" style="width: 100%; height: 100%; object-fit: contain;">
+                            </div>
+                        {% else %}
+                            <img src="{% static 'logo_foto.svg' %}" alt="Blogix Logo" class="logo-light" style="height: 30px; margin-bottom: 8px;">
+                            <img src="{% static 'logo_white.svg' %}" alt="Blogix Logo" class="logo-dark" style="height: 30px; margin-bottom: 8px;">
+                        {% endif %}
                     </div>
-                    <div>blogix is a blackix platform</div>
-                    <div>all rights reserved</div>
+                    <div>blog di {{ request.user.username }}</div>
+                    <div>blackix.it ®</div>
                 </div>
             {% else %}
                 <div class="text-center mb-4">
@@ -840,29 +847,36 @@
                             <li class="mb-2">
                                 <a href="{% url 'blog_view' username=user.username %}" class="text-decoration-none">
                                     <span class="sidebar-full">{{ user.username }}</span>
-                                    <i class="fas fa-blog sidebar-icon" title="{{ user.username }}"></i>
                                 </a>
                             </li>
                         {% endfor %}
                     </ul>
                 </div>
                 
-                <!-- Altri blog - sezione separata con spazio -->
-                <div class="mb-4" style="margin-bottom: 30px !important;">
+                {% include "blog/includes/sidebar_photo_grid.html" %}
+                
+                <!-- Pulsante Esplora sotto la mini galleria -->
+                <div class="mt-3 mb-3">
                     <a href="{% url 'all_blogs' %}" class="btn btn-dark sidebar-full w-100">
-                        <i class="fas fa-globe me-2"></i> Altri Blog
+                        <i class="fas fa-globe me-2"></i> Esplora
                     </a>
-                    <a href="{% url 'all_blogs' %}" class="sidebar-icon" title="Altri Blog"><i class="fas fa-globe"></i></a>
+                    <a href="{% url 'all_blogs' %}" class="sidebar-icon" title="Esplora"><i class="fas fa-globe"></i></a>
                 </div>
                 
                 <!-- Footer con crediti - bloccato in basso -->
                 <div class="text-center mt-auto mb-2 sidebar-full" style="font-size: 0.8em; color: #888;">
                     <div class="d-flex justify-content-center">
-                        <img src="{% static 'logo_foto.svg' %}" alt="Blogix Logo" class="logo-light" style="height: 30px; margin-bottom: 8px;">
-                        <img src="{% static 'logo_white.svg' %}" alt="Blogix Logo" class="logo-dark" style="height: 30px; margin-bottom: 8px;">
+                        {% if request.user.blogsettings.symbol_icon %}
+                            <div style="width: 30px; height: 30px; margin-bottom: 8px; display: flex; align-items: center; justify-content: center; overflow: hidden;">
+                                <img src="{{ request.user.blogsettings.symbol_icon.url }}" alt="Blog Icon" style="width: 100%; height: 100%; object-fit: contain;">
+                            </div>
+                        {% else %}
+                            <img src="{% static 'logo_foto.svg' %}" alt="Blogix Logo" class="logo-light" style="height: 30px; margin-bottom: 8px;">
+                            <img src="{% static 'logo_white.svg' %}" alt="Blogix Logo" class="logo-dark" style="height: 30px; margin-bottom: 8px;">
+                        {% endif %}
                     </div>
-                    <div>blogix is a blackix platform</div>
-                    <div>all rights reserved</div>
+                    <div>blog di {{ request.user.username }}</div>
+                    <div>blackix.it ®</div>
                 </div>
                 
                 <div class="mt-auto">
@@ -916,6 +930,7 @@
     <script src="{% static 'js/vr-viewer.js' %}"></script>
     <script src="{% static 'js/mobile.js' %}"></script>
     <script src="{% static 'js/vr-slideshow-integration.js' %}"></script>
+    <script src="{% static 'js/sidebar-photo-grid.js' %}"></script>
     <script>
         $(document).ready(function() {
             const sidebar = $('#sidebar');

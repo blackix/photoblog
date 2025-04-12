@@ -11,7 +11,8 @@ class BlogSettings(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE)
     blog_name = models.CharField(max_length=200, default='My Photo Blog')
     tagline = models.CharField(max_length=500, blank=True)
-    site_icon = models.ImageField(upload_to='site_icons/', blank=True)
+    site_icon = models.ImageField(upload_to='site_icons/', blank=True, help_text='Icona del profilo utente')
+    symbol_icon = models.ImageField(upload_to='symbol_icons/', blank=True, help_text='Icona simbolo personalizzata')
     is_published = models.BooleanField(default=False)
     dark_mode = models.BooleanField(default=False)
     created_at = models.DateTimeField(auto_now_add=True)
@@ -37,6 +38,7 @@ class Photo(models.Model):
     description = models.TextField(blank=True)
     upload_date = models.DateTimeField(auto_now_add=True)
     metadata = models.JSONField(default=dict, blank=True)
+    view_count = models.PositiveIntegerField(default=0, help_text='Numero di visualizzazioni della foto')
 
     def delete(self, *args, **kwargs):
         # Delete the image file when deleting the Photo object

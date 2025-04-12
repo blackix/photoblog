@@ -1,0 +1,14 @@
+{% load static %}
+
+<!-- Griglia di foto casuali con transizione -->
+<div class="sidebar-full mb-4">
+    <div class="sidebar-photo-grid-title">Scopri</div>
+    <div class="sidebar-photo-grid">
+        {% for i in '1234'|make_list %}
+        <div class="sidebar-photo-item" data-photo-id="" data-photo-url="">
+            <img src="{% static 'img/placeholder.jpg' %}" alt="Foto">
+            <div class="photo-overlay"></div>
+        </div>
+        {% endfor %}
+    </div>
+</div>

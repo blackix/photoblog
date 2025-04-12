@@ -114,7 +114,16 @@ def api_photo_detail(request, photo_id):
     """
     photo = get_object_or_404(Photo, id=photo_id)
     
+    # Incrementa il contatore delle visualizzazioni
+    photo.view_count += 1
+    photo.save(update_fields=['view_count'])
+    
     # Assumiamo che tutti gli album siano pubblici per la versione mobile
+    
+    # Controlla se l'utente ha messo like
+    user_liked = False
+    if request.user.is_authenticated:
+        user_liked = Like.objects.filter(user=request.user, photo=photo).exists()
     
     data = {
         'id': photo.id,
@@ -123,7 +132,9 @@ def api_photo_detail(request, photo_id):
         'upload_date': photo.upload_date.strftime('%d/%m/%Y') if photo.upload_date else None,
         'album_title': photo.album.title,
         'likes_count': Like.objects.filter(photo=photo).count(),
-        'comments_count': Comment.objects.filter(photo=photo).count()
+        'comments_count': Comment.objects.filter(photo=photo).count(),
+        'view_count': photo.view_count,
+        'has_liked': user_liked
     }
     
     return JsonResponse(data)
@@ -300,6 +311,32 @@ def mobile_delete_album(request, album_id):
     
     # Reindirizza alla dashboard mobile
     return redirect('mobile_dashboard')
+
+def mobile_rename_album(request, album_id):
+    """
+    Vista mobile per rinominare un album
+    """
+    if not request.user.is_authenticated:
+        return redirect('mobile_home')
+    
+    album = get_object_or_404(Album, id=album_id, user=request.user)
+    
+    # Log per debug
+    print(f"Mobile rename album request received for album {album_id}")
+    
+    # Ottieni il nuovo titolo dal POST
+    new_title = request.POST.get('title', '').strip()
+    
+    if not new_title:
+        return JsonResponse({'status': 'error', 'message': 'Il titolo non può essere vuoto'}, status=400)
+    
+    # Aggiorna il titolo dell'album
+    album.title = new_title
+    album.save()
+    
+    print(f"Mobile album {album_id} renamed to '{new_title}'")
+    
+    return JsonResponse({'status': 'success', 'new_title': new_title})
 
 def mobile_delete_photo(request, photo_id):
     """

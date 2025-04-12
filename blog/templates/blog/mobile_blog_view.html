@@ -8,8 +8,9 @@
     <div class="mobile-blog-header">
         <div class="d-flex align-items-center">
             <h1 class="mb-0">{{ blog_owner.username }}</h1>
-            <img src="{% static 'logo_foto.svg' %}" alt="Blogix Logo" class="logo-light ms-2" style="height: 24px;">
-            <img src="{% static 'logo_white.svg' %}" alt="Blogix Logo" class="logo-dark ms-2" style="height: 24px;">
+        </div>
+        <div class="d-flex align-items-center mt-1">
+            <span class="text-muted">blackix.it ®</span>
         </div>
         <p>{{ settings.tagline }}</p>
     </div>
@@ -59,16 +60,19 @@
             <div class="mobile-photo-caption" id="mobileModalCaption"></div>
             <div class="mobile-photo-date" id="mobileModalDate"></div>
             
-            <div class="mobile-photo-actions">
-                <button class="mobile-action-btn mobile-like-btn" id="mobileModalLikeBtn">
-                    <i class="far fa-heart"></i> <span id="mobileLikeCount">0</span>
-                </button>
-                <button class="mobile-action-btn mobile-comment-btn" id="mobileModalCommentBtn">
-                    <i class="far fa-comment"></i> <span id="mobileCommentCount">0</span>
-                </button>
-                <button class="mobile-action-btn mobile-share-btn" id="mobileModalShareBtn">
+            <div class="mobile-photo-stats">
+                <div class="mobile-stat-item clickable" id="mobileViewItem">
+                    <i class="fas fa-eye"></i> <span id="mobileViewCount">0</span> visualizzazioni
+                </div>
+                <div class="mobile-stat-item clickable" id="mobileLikeItem">
+                    <i class="far fa-heart" id="mobileLikeIcon"></i> <span id="mobileLikeCount">0</span> like
+                </div>
+                <div class="mobile-stat-item clickable" id="mobileCommentItem">
+                    <i class="far fa-comment"></i> <span id="mobileCommentCount">0</span> commenti
+                </div>
+                <div class="mobile-stat-item clickable" id="mobileShareItem">
                     <i class="fas fa-share-alt"></i>
-                </button>
+                </div>
             </div>
             
             <div class="mobile-comments-section">
@@ -95,6 +99,9 @@
 {% block extra_js %}
 <script>
     $(document).ready(function() {
+        // Variabile per tenere traccia dell'ID della foto corrente
+        let currentPhotoId = 0;
+        
         // Gestione apertura/chiusura modal foto
         $('.mobile-photo-thumbnail').on('click', function() {
             const photoId = $(this).data('photo-id');
@@ -116,6 +123,12 @@
         
         // Funzione per aprire il modal con una foto specifica
         function openMobilePhotoModal(photoId) {
+            // Salva l'ID della foto corrente
+            currentPhotoId = photoId;
+            
+            // Imposta la foto come attiva
+            $('.mobile-photo-thumbnail').removeClass('active');
+            $(`.mobile-photo-thumbnail[data-photo-id="${photoId}"]`).addClass('active');
             // Carica i dati della foto
             $.ajax({
                 url: `/api/photos/${photoId}/`,
@@ -124,9 +137,19 @@
                     $('#mobileModalPhoto').attr('src', data.image_url);
                     $('#mobileModalCaption').text(data.caption || '');
                     $('#mobileModalDate').text(data.upload_date || '');
+                    
+                    // Aggiorna le statistiche
+                    $('#mobileViewCount').text(data.view_count || 0);
                     $('#mobileLikeCount').text(data.likes_count || 0);
                     $('#mobileCommentCount').text(data.comments_count || 0);
                     $('.mobile-modal-title').text(data.album_title || 'Foto');
+                    
+                    // Aggiorna lo stato del pulsante like
+                    if (data.has_liked) {
+                        $('#mobileLikeIcon').removeClass('far').addClass('fas text-danger');
+                    } else {
+                        $('#mobileLikeIcon').removeClass('fas text-danger').addClass('far');
+                    }
                     
                     // Carica i commenti
                     loadMobileComments(photoId);
@@ -177,17 +200,117 @@
             });
         }
         
+        // Gestione click sulle statistiche
+        $('#mobileLikeItem').on('click', function() {
+            toggleMobileLike(currentPhotoId);
+        });
+        
+        $('#mobileCommentItem').on('click', function() {
+            // Scorrere alla sezione commenti
+            $('.mobile-comments-section')[0].scrollIntoView({ behavior: 'smooth' });
+            $('#mobileCommentText').focus();
+        });
+        
+        $('#mobileShareItem').on('click', function() {
+            // Condivisione della foto
+            const photoUrl = $('#mobileModalPhoto').attr('src');
+            const caption = $('#mobileModalCaption').text();
+            
+            if (navigator.share) {
+                navigator.share({
+                    title: caption || 'Foto da Photoblog',
+                    text: caption || 'Guarda questa foto!',
+                    url: window.location.href
+                }).catch(console.error);
+            } else {
+                alert('La condivisione non è supportata su questo browser');
+            }
+        });
+        
+        // Funzione per aggiungere/rimuovere like
+        function toggleMobileLike(photoId) {
+            console.log('Toggling like for photo ID:', photoId);
+            
+            if (!photoId || photoId <= 0) {
+                console.error('Invalid photo ID:', photoId);
+                return;
+            }
+            
+            // Ottieni il token CSRF
+            const csrfToken = $('meta[name="csrf-token"]').attr('content');
+            console.log('CSRF Token:', csrfToken);
+            
+            // Effetto visivo immediato (ottimistico)
+            const $icon = $('#mobileLikeIcon');
+            const isLiked = $icon.hasClass('fas');
+            const currentCount = parseInt($('#mobileLikeCount').text()) || 0;
+            
+            if (isLiked) {
+                $icon.removeClass('fas text-danger').addClass('far');
+                $('#mobileLikeCount').text(Math.max(0, currentCount - 1));
+            } else {
+                $icon.removeClass('far').addClass('fas text-danger');
+                $('#mobileLikeCount').text(currentCount + 1);
+            }
+            
+            $.ajax({
+                url: `/photo/${photoId}/like/`,
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': csrfToken
+                },
+                xhrFields: {
+                    withCredentials: true
+                },
+                success: function(response) {
+                    console.log('Like response:', response);
+                    
+                    // Aggiorna il conteggio dei like
+                    $('#mobileLikeCount').text(response.likes_count);
+                    
+                    // Aggiorna lo stato del pulsante like
+                    if (response.liked) {
+                        $('#mobileLikeIcon').removeClass('far').addClass('fas text-danger');
+                    } else {
+                        $('#mobileLikeIcon').removeClass('fas text-danger').addClass('far');
+                    }
+                },
+                error: function(xhr, status, error) {
+                    console.error('Error toggling like:', error);
+                    
+                    // Ripristina lo stato precedente dell'icona e del contatore
+                    const $icon = $('#mobileLikeIcon');
+                    const isCurrentlyLiked = $icon.hasClass('fas');
+                    const currentCount = parseInt($('#mobileLikeCount').text()) || 0;
+                    
+                    if (isCurrentlyLiked) {
+                        $icon.removeClass('fas text-danger').addClass('far');
+                        $('#mobileLikeCount').text(Math.max(0, currentCount - 1));
+                    } else {
+                        $icon.removeClass('far').addClass('fas text-danger');
+                        $('#mobileLikeCount').text(currentCount + 1);
+                    }
+                    
+                    // Se l'errore è dovuto all'autenticazione (status 401 o 403)
+                    if (xhr.status === 401 || xhr.status === 403) {
+                        alert('Devi accedere per mettere like alle foto');
+                    } else {
+                        alert('Si è verificato un errore. Riprova più tardi.');
+                    }
+                }
+            });
+        }
+        
         // Gestione invio commenti
         $('#mobileSubmitComment').on('click', function() {
-            const photoId = $('.mobile-photo-thumbnail.active').data('photo-id');
             const text = $('#mobileCommentText').val().trim();
             
-            if (text && photoId) {
+            if (text && currentPhotoId) {
                 $.ajax({
-                    url: `/api/photos/${photoId}/comments/`,
+                    url: `/photo/${currentPhotoId}/comment/`,
                     method: 'POST',
                     data: {
-                        text: text,
+                        comment: text,
                         csrfmiddlewaretoken: $('meta[name="csrf-token"]').attr('content')
                     },
                     success: function() {

@@ -5,7 +5,12 @@
 
 {% block mobile_content %}
 <div class="mobile-album-detail">
-    <h2 class="mobile-page-title">{{ album.title }}</h2>
+    <div class="mobile-album-header">
+        <h2 class="mobile-page-title" id="mobile-album-title">{{ album.title }}</h2>
+        <button id="rename-album-btn" class="mobile-btn mobile-btn-icon" data-album-id="{{ album.id }}">
+            <i class="fas fa-edit"></i>
+        </button>
+    </div>
     <p class="mobile-album-description">{{ album.description }}</p>
     
     <div class="mobile-album-actions">
@@ -60,6 +65,26 @@
     {% endif %}
 </div>
 
+<!-- Modal per rinominare l'album -->
+<div class="mobile-modal" id="renameAlbumModal">
+    <div class="mobile-modal-content">
+        <div class="mobile-modal-header">
+            <h3>Rinomina Album</h3>
+            <button class="mobile-modal-close">&times;</button>
+        </div>
+        <div class="mobile-modal-body">
+            <form id="renameAlbumForm">
+                <input type="hidden" id="albumIdRename" value="{{ album.id }}">
+                <div class="mobile-form-group">
+                    <label for="albumTitleRename">Nuovo titolo</label>
+                    <input type="text" id="albumTitleRename" class="mobile-form-control" value="{{ album.title }}" required>
+                </div>
+                <button type="submit" class="mobile-btn mobile-btn-primary mobile-btn-block">Salva</button>
+            </form>
+        </div>
+    </div>
+</div>
+
 <!-- Modal per modifica didascalia -->
 <div class="mobile-modal" id="editCaptionModal">
     <div class="mobile-modal-content">
@@ -85,6 +110,45 @@
 {% block extra_js %}
 <script>
 $(document).ready(function() {
+    // Apertura del modal per rinominare l'album
+    $('#rename-album-btn').on('click', function() {
+        $('#renameAlbumModal').addClass('show');
+    });
+    
+    // Invio del form per rinominare l'album
+    $('#renameAlbumForm').on('submit', function(e) {
+        e.preventDefault();
+        const albumId = $('#albumIdRename').val();
+        const newTitle = $('#albumTitleRename').val().trim();
+        
+        if (!newTitle) {
+            alert('Il titolo non può essere vuoto');
+            return;
+        }
+        
+        $.ajax({
+            url: `/m/album/${albumId}/rename/`,
+            method: 'POST',
+            data: {
+                'title': newTitle,
+                'csrfmiddlewaretoken': '{{ csrf_token }}'
+            },
+            success: function(response) {
+                // Aggiorna il titolo nella pagina
+                $('#mobile-album-title').text(response.new_title);
+                // Chiudi il modal
+                $('#renameAlbumModal').removeClass('show');
+            },
+            error: function(xhr) {
+                let errorMsg = 'Errore durante il rinomino dell\'album';
+                if (xhr.responseJSON && xhr.responseJSON.message) {
+                    errorMsg += ': ' + xhr.responseJSON.message;
+                }
+                alert(errorMsg);
+            }
+        });
+    });
+    
     // Apertura del modal per modifica didascalia
     $('.mobile-photo-edit-btn').on('click', function(e) {
         e.stopPropagation();
@@ -102,9 +166,9 @@ $(document).ready(function() {
         });
     });
     
-    // Chiusura del modal
+    // Chiusura dei modal
     $('.mobile-modal-close').on('click', function() {
-        $('#editCaptionModal').removeClass('show');
+        $(this).closest('.mobile-modal').removeClass('show');
     });
     
     // Invio del form per aggiornare la didascalia

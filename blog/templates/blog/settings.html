@@ -3,20 +3,222 @@
 
 {% block content %}
 <div class="container">
-    <h2 class="mb-4">Blog Settings</h2>
+    <h2 class="mb-4">Impostazioni Blog</h2>
     
-    <div class="row">
-        <div class="col-md-8">
-            <div class="card">
-                <div class="card-body">
-                    <form method="post" enctype="multipart/form-data">
+    <div class="row justify-content-center">
+        <div class="col-lg-10">
+            <div class="card mb-4 shadow-sm">
+                <div class="card-header">
+                    <h4 class="mb-0">Informazioni generali</h4>
+                </div>
+                <div class="card-body p-4">
+                    <form method="post" enctype="multipart/form-data" id="settings-form">
                         {% csrf_token %}
-                        {{ form|crispy }}
-                        <button type="submit" class="btn btn-primary">Save Changes</button>
+                        
+                        <div class="settings-container">
+                            <!-- Informazioni testuali -->
+                            <div class="text-info-section mb-4">
+                                <h5 class="border-bottom pb-2 mb-3">Informazioni testuali</h5>
+                                <div class="form-group mb-3">
+                                    <label for="{{ form.blog_name.id_for_label }}" class="form-label">Nome del blog</label>
+                                    {{ form.blog_name|safe }}
+                                </div>
+                                
+                                <div class="form-group mb-3">
+                                    <label for="{{ form.tagline.id_for_label }}" class="form-label">Tagline</label>
+                                    {{ form.tagline|safe }}
+                                    <small class="form-text text-muted">Una breve descrizione del tuo blog</small>
+                                </div>
+                                
+                                <div class="form-check mb-3">
+                                    {{ form.is_published|safe }}
+                                    <label class="form-check-label" for="{{ form.is_published.id_for_label }}">
+                                        Pubblica il blog
+                                    </label>
+                                    <small class="form-text text-muted d-block">{{ form.is_published.help_text }}</small>
+                                </div>
+                            </div>
+                            
+                            <!-- Immagini del profilo -->
+                            <div class="images-section mb-4">
+                                <h5 class="border-bottom pb-2 mb-3">Immagini del profilo</h5>
+                                <div class="row">
+                                    <!-- Foto profilo -->
+                                    <div class="col-md-6 mb-4">
+                                        <div class="image-upload-container">
+                                            <label class="d-block mb-2">{{ form.site_icon.label }}</label>
+                                            <div class="icon-preview-container mb-3">
+                                                {% if user.blogsettings.site_icon %}
+                                                    <img src="{{ user.blogsettings.site_icon.url }}" alt="Foto profilo" class="icon-preview">
+                                                {% else %}
+                                                    <div class="icon-placeholder">
+                                                        <i class="fas fa-user"></i>
+                                                    </div>
+                                                {% endif %}
+                                            </div>
+                                            
+                                            <div class="custom-file text-center">
+                                                {{ form.site_icon|safe }}
+                                                <label class="btn btn-outline-primary" for="{{ form.site_icon.id_for_label }}">
+                                                    <i class="fas fa-upload"></i> Scegli immagine
+                                                </label>
+                                                <small class="form-text text-muted d-block mt-2">Questa sarà la tua foto profilo</small>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    
+                                    <!-- Icona simbolo -->
+                                    <div class="col-md-6 mb-4">
+                                        <div class="image-upload-container">
+                                            <label class="d-block mb-2">{{ form.symbol_icon.label }}</label>
+                                            <div class="icon-preview-container mb-3">
+                                                {% if user.blogsettings.symbol_icon %}
+                                                    <img src="{{ user.blogsettings.symbol_icon.url }}" alt="Icona simbolo" class="icon-preview">
+                                                {% else %}
+                                                    <div class="icon-placeholder">
+                                                        <i class="fas fa-image"></i>
+                                                    </div>
+                                                {% endif %}
+                                            </div>
+                                            
+                                            <div class="custom-file text-center">
+                                                {{ form.symbol_icon|safe }}
+                                                <label class="btn btn-outline-primary" for="{{ form.symbol_icon.id_for_label }}">
+                                                    <i class="fas fa-upload"></i> Scegli icona
+                                                </label>
+                                                <small class="form-text text-muted d-block mt-2">Questa icona sostituirà quella predefinita del blog</small>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="text-center mt-4">
+                            <button type="submit" class="btn btn-primary btn-lg px-4">
+                                <i class="fas fa-save me-2"></i> Salva modifiche
+                            </button>
+                        </div>
                     </form>
                 </div>
             </div>
         </div>
     </div>
 </div>
+
+<style>
+    /* Layout generale */
+    .settings-container {
+        max-width: 100%;
+        margin: 0 auto;
+    }
+    
+    /* Stili per le sezioni */
+    .text-info-section, .images-section {
+        background-color: var(--card-bg);
+        border-radius: 8px;
+        padding: 20px;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+    }
+    
+    /* Stili per i campi di input */
+    .form-control {
+        border-radius: 4px;
+        border: 1px solid var(--border-color);
+        padding: 8px 12px;
+        background-color: var(--input-bg);
+        color: var(--text-color);
+        transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
+    }
+    
+    .form-control:focus {
+        border-color: var(--primary-color);
+        box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
+    }
+    
+    /* Stili per le etichette */
+    .form-label {
+        font-weight: 500;
+        margin-bottom: 0.5rem;
+        color: var(--text-color);
+    }
+    
+    /* Container per l'upload delle immagini */
+    .image-upload-container {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+    }
+    
+    /* Stili per l'anteprima delle icone */
+    .icon-preview-container {
+        width: 120px;
+        height: 120px;
+        margin: 0 auto;
+        border-radius: 50%;
+        overflow: hidden;
+        border: 3px solid var(--border-color);
+        background-color: var(--sidebar-bg);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        transition: all 0.3s ease;
+    }
+    
+    .icon-preview-container:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 6px 8px rgba(0, 0, 0, 0.15);
+    }
+    
+    .icon-preview {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+    }
+    
+    .icon-placeholder {
+        width: 100%;
+        height: 100%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 3rem;
+        color: var(--text-color);
+        opacity: 0.5;
+    }
+    
+    /* Nascondere l'input file originale */
+    #id_site_icon, #id_symbol_icon {
+        position: absolute;
+        width: 0.1px;
+        height: 0.1px;
+        opacity: 0;
+        overflow: hidden;
+        z-index: -1;
+    }
+    
+    /* Stile per il pulsante di salvataggio */
+    .btn-primary {
+        background-color: var(--primary-color);
+        border-color: var(--primary-color);
+        padding: 8px 16px;
+        font-weight: 500;
+        transition: all 0.2s ease;
+    }
+    
+    .btn-primary:hover {
+        background-color: var(--primary-hover);
+        border-color: var(--primary-hover);
+        transform: translateY(-1px);
+    }
+    
+    /* Responsive per schermi più piccoli */
+    @media (max-width: 768px) {
+        .icon-preview-container {
+            width: 100px;
+            height: 100px;
+        }
+    }
+</style>
 {% endblock %}

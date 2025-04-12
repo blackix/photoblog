@@ -197,12 +197,12 @@
     {# Sezione Foto in evidenza #}
     <div class="section-title">
         <h2>Foto in evidenza</h2>
-        <p class="text-muted">Una selezione casuale di foto dai nostri utenti</p>
+        <p class="text-muted">Le foto più popolari con più visualizzazioni, like e commenti</p>
     </div>
     
     <div class="photo-carousel-container" style="display: block !important; visibility: visible !important;">
         <div class="photo-carousel" id="photoCarousel" style="display: flex !important;">
-            {% for photo in random_photos %}
+            {% for photo in popular_photos %}
             <div class="carousel-item" style="display: block !important; cursor: pointer;" 
                  data-photo-id="{{ photo.id }}"
                  data-photo-url="{{ photo.image.url }}"
@@ -213,6 +213,11 @@
                 <img src="{{ photo.image.url }}" alt="{{ photo.caption|default:'Foto' }}" style="display: block !important;">
                 <div class="carousel-item-overlay">
                     <p>{{ photo.caption|default:'Senza titolo' }}</p>
+                    <small>
+                        <i class="fas fa-eye"></i> {{ photo.view_count }} 
+                        <i class="fas fa-heart"></i> {{ photo.likes_count }} 
+                        <i class="fas fa-comment"></i> {{ photo.comments_count }}
+                    </small>
                     <small>Album: {{ photo.album.title }} di {{ photo.album.user.username }}</small>
                 </div>
             </div>

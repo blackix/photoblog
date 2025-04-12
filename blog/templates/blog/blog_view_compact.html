@@ -69,8 +69,29 @@ z-index: 99999;">
             </div>
         </div>
         
-        <!-- Right column: Comments section -->
+        <!-- Right column: Stats and Comments section -->
         <div class="modal-comments" style="color: white; padding: 15px; background-color: rgba(255,255,255,0.1); border-radius: 8px; width: 20%; height: calc(100vh - 20px); display: flex; flex-direction: column; overflow: hidden;">
+            <!-- Stats section -->
+            <div class="photo-stats" style="margin-bottom: 15px; background-color: rgba(0,0,0,0.2); border-radius: 8px; padding: 10px;">
+                <div style="display: flex; justify-content: space-between; margin-bottom: 10px;">
+                    <div class="stat-item" style="text-align: center; flex: 1;">
+                        <i class="fas fa-eye" style="font-size: 1.2em; margin-bottom: 5px; display: block;"></i>
+                        <div id="viewCount" style="font-weight: bold; font-size: 1.1em;">0</div>
+                        <div style="font-size: 0.8em; color: #ccc;">Visualizzazioni</div>
+                    </div>
+                    <div class="stat-item" style="text-align: center; flex: 1;">
+                        <i class="fas fa-heart" id="likeIcon" style="font-size: 1.2em; margin-bottom: 5px; display: block; cursor: pointer;"></i>
+                        <div id="likeCount" style="font-weight: bold; font-size: 1.1em;">0</div>
+                        <div style="font-size: 0.8em; color: #ccc;">Like</div>
+                    </div>
+                    <div class="stat-item" style="text-align: center; flex: 1;">
+                        <i class="fas fa-comment" style="font-size: 1.2em; margin-bottom: 5px; display: block;"></i>
+                        <div id="commentCount" style="font-weight: bold; font-size: 1.1em;">0</div>
+                        <div style="font-size: 0.8em; color: #ccc;">Commenti</div>
+                    </div>
+                </div>
+            </div>
+            
             <h4 style="margin-bottom: 10px; border-bottom: 1px solid rgba(255,255,255,0.2); padding-bottom: 5px; font-size: 1em;">Commenti</h4>
             
             <div id="comments-container" style="flex-grow: 1; overflow-y: auto; margin-bottom: 10px; font-size: 0.9em;">
@@ -93,7 +114,12 @@ z-index: 99999;">
 {{ photos_data|json_script:"photos-data-json" }}
 {% endblock %}
 
+<!-- Aggiungiamo un elemento per indicare se l'utente è autenticato -->
+<div id="auth-status" data-is-authenticated="{{ user.is_authenticated|yesno:'true,false' }}" style="display: none;"></div>
+
 {% block extra_css %}
+<!-- Aggiungiamo il meta tag per il CSRF token -->
+<meta name="csrf-token" content="{{ csrf_token }}">
 <style>
 /* Blog header */
 .blog-header {
@@ -183,6 +209,8 @@ z-index: 99999;">
 {% block extra_js %}
 {% load static %}
 <script src="{% static 'js/vr-viewer.js' %}"></script>
+<script src="{% static 'js/photo-interactions.js' %}"></script>
+<script src="{% static 'js/blog-view-compact.js' %}"></script>
 <script>
 $(document).ready(function() {
     console.log("Document ready, initializing photo viewer...");
@@ -332,6 +360,7 @@ $(document).ready(function() {
         const commentText = $commentText.val().trim();
         if (commentText && currentPhotoId > 0) {
             submitComment(currentPhotoId, commentText);
+            return false; // Prevent form submission
         }
     });
     
@@ -348,73 +377,155 @@ $(document).ready(function() {
         }
     });
     
+    // Function to load photo statistics and comments
+    function loadPhotoStats(photoId) {
+        // Make an AJAX call to get photo statistics
+        $.ajax({
+            url: `/api/photos/${photoId}/`,
+            method: 'GET',
+            success: function(data) {
+                // Update statistics
+                $('#viewCount').text(data.view_count || 0);
+                $('#likeCount').text(data.likes_count || 0);
+                $('#commentCount').text(data.comments_count || 0);
+                
+                // Update like button state
+                if (data.has_liked) {
+                    $('#likeIcon').addClass('text-danger');
+                } else {
+                    $('#likeIcon').removeClass('text-danger');
+                }
+            },
+            error: function() {
+                console.error('Errore nel caricamento delle statistiche della foto');
+            }
+        });
+    }
+    
+    // Function to toggle like on a photo
+    function toggleLike(photoId) {
+        if (!isAuthenticated) {
+            alert('Devi accedere per mettere like alle foto');
+            return;
+        }
+        
+        console.log('Toggling like for photo ID:', photoId);
+        
+        $.ajax({
+            url: `{% url 'toggle_like_photo' photo_id=0 %}`.replace('0', photoId),
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': '{{ csrf_token }}'
+            },
+            success: function(response) {
+                console.log('Like response:', response);
+                
+                // Update like count
+                $('#likeCount').text(response.likes_count);
+                
+                // Update like button state
+                if (response.liked) {
+                    $('#likeIcon').addClass('text-danger');
+                } else {
+                    $('#likeIcon').removeClass('text-danger');
+                }
+            },
+            error: function(xhr, status, error) {
+                console.error('Error toggling like:', error);
+                alert('Si è verificato un errore. Riprova più tardi.');
+            }
+        });
+    }
+    
+    // Add click handler for like button
+    $(document).on('click', '#likeIcon', function() {
+        toggleLike(currentPhotoId);
+    });
+    
     // Function to load comments for a photo
     function loadComments(photoId) {
         $commentsContainer.html('<p style="text-align: center; color: #aaa;">Caricamento commenti...</p>');
         
-        // Simulate comments for testing
-        // In a real application, this would be an AJAX call to the server
-        setTimeout(function() {
-            const mockComments = [
-                { author: "Utente1", created_at: "2 ore fa", text: "Bellissima foto!" },
-                { author: "Utente2", created_at: "1 giorno fa", text: "Mi piace molto la composizione." }
-            ];
-            
-            if (mockComments.length > 0) {
-                let commentsHtml = '';
-                mockComments.forEach(function(comment) {
-                    commentsHtml += `
-                        <div class="comment" style="margin-bottom: 8px; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 8px;">
-                            <div style="display: flex; justify-content: space-between; margin-bottom: 3px;">
-                                <strong style="color: #ddd; font-size: 0.9em;">${comment.author}</strong>
-                                <span style="color: #999; font-size: 0.8em;">${comment.created_at}</span>
+        // Carica i commenti dal server
+        $.ajax({
+            url: `{% url 'get_photo_comments' photo_id=0 %}`.replace('0', photoId),
+            method: 'GET',
+            success: function(data) {
+                if (data.comments && data.comments.length > 0) {
+                    let commentsHtml = '';
+                    data.comments.forEach(function(comment) {
+                        commentsHtml += `
+                            <div class="comment" style="margin-bottom: 8px; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 8px;">
+                                <div style="display: flex; justify-content: space-between; margin-bottom: 3px;">
+                                    <strong style="color: #ddd; font-size: 0.9em;">${comment.author}</strong>
+                                    <span style="color: #999; font-size: 0.8em;">${comment.created_at}</span>
+                                </div>
+                                <p style="margin: 0; color: #eee; font-size: 0.9em;">${comment.text}</p>
                             </div>
-                            <p style="margin: 0; color: #eee; font-size: 0.9em;">${comment.text}</p>
-                        </div>
-                    `;
-                });
-                $commentsContainer.html(commentsHtml);
-            } else {
-                $commentsContainer.html('<p style="text-align: center; color: #aaa; font-size: 0.9em;">Nessun commento ancora.</p>');
+                        `;
+                    });
+                    $commentsContainer.html(commentsHtml);
+                    
+                    // Aggiorna anche il conteggio dei commenti
+                    $('#commentCount').text(data.comments.length);
+                } else {
+                    $commentsContainer.html('<p style="text-align: center; color: #aaa; font-size: 0.9em;">Nessun commento ancora.</p>');
+                    $('#commentCount').text('0');
+                }
+            },
+            error: function(xhr, status, error) {
+                console.error('Error loading comments:', error);
+                $commentsContainer.html('<p style="text-align: center; color: #aaa; font-size: 0.9em;">Errore nel caricamento dei commenti.</p>');
             }
-        }, 500);
+        });
     }
     
     // Function to submit a new comment
-    function submitComment(photoId, text) {
+    function submitComment(photoId, commentText) {
         $submitComment.prop('disabled', true).text('Invio in corso...');
         
-        // Simulate comment submission
-        // In a real application, this would be an AJAX call to the server
-        setTimeout(function() {
-            $commentText.val('');
-            
-            // Add the new comment to the list
-            const newComment = {
-                author: "Tu",
-                created_at: "Adesso",
-                text: text
-            };
-            
-            const commentHtml = `
-                <div class="comment" style="margin-bottom: 8px; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 8px;">
-                    <div style="display: flex; justify-content: space-between; margin-bottom: 3px;">
-                        <strong style="color: #ddd; font-size: 0.9em;">${newComment.author}</strong>
-                        <span style="color: #999; font-size: 0.8em;">${newComment.created_at}</span>
-                    </div>
-                    <p style="margin: 0; color: #eee; font-size: 0.9em;">${newComment.text}</p>
-                </div>
-            `;
-            
-            if ($commentsContainer.find('.comment').length > 0) {
-                $commentsContainer.prepend(commentHtml);
-            } else {
-                $commentsContainer.html(commentHtml);
+        $.ajax({
+            url: `{% url 'add_comment_photo' photo_id=0 %}`.replace('0', photoId),
+            method: 'POST',
+            data: {
+                'comment': commentText,
+                'csrfmiddlewaretoken': '{{ csrf_token }}'
+            },
+            success: function(response) {
+                // Clear the comment input
+                $commentText.val('');
+                
+                // Reload comments to show the new comment
+                loadComments(photoId);
+                
+                // Update comment count
+                $('#commentCount').text(response.comments_count);
+                
+                // Re-enable submit button
+                $submitComment.prop('disabled', false).text('Invia commento');
+            },
+            error: function(xhr, status, error) {
+                console.error('Error submitting comment:', error);
+                alert('Si è verificato un errore nell\'invio del commento. Riprova più tardi.');
+                
+                // Re-enable submit button even on error
+                $submitComment.prop('disabled', false).text('Invia commento');
             }
-            
-            $submitComment.prop('disabled', false).text('Invia commento');
-        }, 800);
+        });
     }
+    
+    // Initialize color picker
+    $('.color-option').click(function() {
+        const selectedColor = $(this).data('color');
+        document.documentElement.style.setProperty('--photo-grid-bg', selectedColor);
+        
+        // Save preference to localStorage
+        localStorage.setItem('photoGridBgColor', selectedColor);
+        
+        // Update active state
+        $('.color-option').removeClass('active');
+        $(this).addClass('active');
+    });
     
     // Function to open modal with specific photo
     function openPhotoModal(photoId) {
@@ -429,33 +540,8 @@ $(document).ready(function() {
         
         // Find index for navigation
         currentPhotoIndex = photosData.findIndex(p => p.id === photoId);
-        console.log("Photo index:", currentPhotoIndex);
         
-        // Update modal content
-        $modalImage.attr("src", photo.image_url);
-        $modalCaption.text(photo.caption || "Senza titolo");
-        $modalDescription.text(photo.description || "");
-        
-        // Update metadata
-        $modalCamera.text(photo.camera_model ? `Camera: ${photo.camera_model}` : "");
-        
-        const settings = [];
-        if (photo.focal_length) settings.push(photo.focal_length);
-        if (photo.f_number) settings.push(`f/${photo.f_number}`);
-        if (photo.exposure) settings.push(`${photo.exposure}s`);
-        if (photo.iso) settings.push(`ISO ${photo.iso}`);
-        $modalSettings.text(settings.length ? settings.join(" | ") : "");
-        
-        $modalDate.text(photo.date_taken ? `Scattata: ${photo.date_taken}` : "");
-        
-        // Load comments
-        loadComments(photoId);
-        
-        // Show/hide navigation buttons
-        $navPrev.toggle(currentPhotoIndex > 0);
-        $navNext.toggle(currentPhotoIndex < photosData.length - 1);
-        
-        // Show modal with inline styles to ensure it's visible
+        // Mostra subito il modal per dare feedback visivo immediato
         $modal.css({
             "display": "block",
             "position": "fixed",
@@ -467,10 +553,38 @@ $(document).ready(function() {
             "z-index": "99999"
         });
         
-        console.log("Modal should now be visible");
-        
         // Prevent body scrolling
         $("body").css("overflow", "hidden");
+        
+        // Precarica l'immagine
+        const img = new Image();
+        img.onload = function() {
+            // Update modal content solo dopo che l'immagine è caricata
+            $modalImage.attr("src", photo.image_url);
+            $modalCaption.text(photo.caption || "Senza titolo");
+            $modalDescription.text(photo.description || "");
+            
+            // Update metadata
+            $modalCamera.text(photo.camera_model ? `Camera: ${photo.camera_model}` : "");
+            
+            const settings = [];
+            if (photo.focal_length) settings.push(photo.focal_length);
+            if (photo.f_number) settings.push(`f/${photo.f_number}`);
+            if (photo.exposure) settings.push(`${photo.exposure}s`);
+            if (photo.iso) settings.push(`ISO ${photo.iso}`);
+            $modalSettings.text(settings.length ? settings.join(" | ") : "");
+            
+            $modalDate.text(photo.date_taken ? `Scattata: ${photo.date_taken}` : "");
+            
+            // Show/hide navigation buttons
+            $navPrev.toggle(currentPhotoIndex > 0);
+            $navNext.toggle(currentPhotoIndex < photosData.length - 1);
+        };
+        img.src = photo.image_url;
+        
+        // Carica commenti e statistiche in parallelo
+        loadComments(photoId);
+        loadPhotoStats(photoId);
     }
     
     // Function to close modal
@@ -481,6 +595,19 @@ $(document).ready(function() {
     }
     
     console.log("Photo viewer initialization complete");
+    
+    // Controlla se c'è un ID di foto da aprire automaticamente
+    const openPhotoId = sessionStorage.getItem('openPhotoId');
+    if (openPhotoId) {
+        // Converti l'ID da stringa a numero
+        const photoId = parseInt(openPhotoId);
+        console.log("Auto-opening photo ID:", photoId);
+        
+        // Apri il modal con la foto specificata immediatamente
+        openPhotoModal(photoId);
+        // Rimuovi l'ID dalla sessionStorage per evitare che si riapra alla prossima visita
+        sessionStorage.removeItem('openPhotoId');
+    }
 });
 
     // Initialize color selector

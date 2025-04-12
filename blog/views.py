@@ -1,5 +1,5 @@
 from django.shortcuts import render, redirect, get_object_or_404
-from .models import BlogSettings
+from .models import BlogSettings, Like
 
 def get_random_photos(limit=10):
     """
@@ -39,6 +39,55 @@ def get_random_photos(limit=10):
         print(f"DEBUG: Selected photo ID: {photo.id}, Album: {photo.album.title}")
     
     return photos
+
+def get_popular_photos(limit=20):
+    """
+    Helper function per ottenere le foto più popolari in base a visualizzazioni, like e commenti.
+    Restituisce un queryset di foto ordinate per popolarità.
+    """
+    from django.contrib.auth.models import User
+    from .models import Photo, BlogSettings, Album, Like, Comment
+    from django.db.models import Count, F
+    
+    # Ottieni tutti gli utenti con blog pubblicati
+    published_blogs = BlogSettings.objects.filter(is_published=True)
+    published_users = [blog.user for blog in published_blogs]
+    
+    # Ottieni tutti gli album di questi utenti
+    albums = Album.objects.filter(user__in=published_users)
+    
+    # Ottieni tutte le foto da questi album e annotale con il conteggio di like e commenti
+    popular_photos = Photo.objects.filter(album__in=albums)\
+        .annotate(likes_count=Count('likes'))\
+        .annotate(comments_count=Count('comments'))\
+        .order_by('-view_count', '-likes_count', '-comments_count')[:limit]
+    
+    return popular_photos
+
+def api_random_photos(request):
+    """
+    API per ottenere foto casuali da blog pubblicati.
+    Utilizzata dal JavaScript della barra laterale per aggiornare la griglia di foto.
+    """
+    from django.http import JsonResponse
+    
+    # Ottieni il limite dalle query params o usa il default
+    limit = int(request.GET.get('limit', 20))
+    
+    # Ottieni foto casuali
+    photos = get_random_photos(limit=limit)
+    
+    # Prepara i dati per la risposta JSON
+    photos_data = [{
+        'id': photo.id,
+        'image_url': photo.image.url,
+        'caption': photo.caption,
+        'album_title': photo.album.title,
+        'username': photo.album.user.username,
+        'album_id': photo.album.id
+    } for photo in photos]
+    
+    return JsonResponse({'photos': photos_data})
 
 def get_settings(user=None):
     """
@@ -302,6 +351,28 @@ def delete_album(request, album_id):
     album.delete()
     return JsonResponse({'status': 'success'})
 
+@login_required
+@require_POST
+def rename_album(request, album_id):
+    album = get_object_or_404(Album, id=album_id, user=request.user)
+    
+    # Log per debug
+    print(f"Rename album request received for album {album_id}")
+    
+    # Ottieni il nuovo titolo dal POST
+    new_title = request.POST.get('title', '').strip()
+    
+    if not new_title:
+        return JsonResponse({'status': 'error', 'message': 'Il titolo non può essere vuoto'}, status=400)
+    
+    # Aggiorna il titolo dell'album
+    album.title = new_title
+    album.save()
+    
+    print(f"Album {album_id} renamed to '{new_title}'")
+    
+    return JsonResponse({'status': 'success', 'new_title': new_title})
+
 def blog_view(request, username):
     blog_owner = get_object_or_404(User, username=username)
     # Only show albums if blog is published
@@ -387,9 +458,21 @@ def blog_view_compact(request, username):
 
 def photo_detail_view(request, photo_id):
     photo = get_object_or_404(Photo, id=photo_id)
+    
+    # Incrementa il contatore delle visualizzazioni
+    photo.view_count += 1
+    photo.save(update_fields=['view_count'])
+    
+    # Controlla se l'utente ha messo like
+    user_liked = False
+    if request.user.is_authenticated:
+        user_liked = Like.objects.filter(user=request.user, photo=photo).exists()
+    
     context = {
         'photo': photo,
-        'settings': get_settings()
+        'settings': get_settings(),
+        'user_liked': user_liked,
+        'likes_count': photo.likes.count()
     }
     return render(request, 'blog/photo_detail_page.html', context)
 
@@ -400,6 +483,26 @@ def toggle_dark_mode(request):
     settings.dark_mode = not settings.dark_mode
     settings.save()
     return JsonResponse({'dark_mode': settings.dark_mode})
+
+@login_required
+@require_POST
+def toggle_like(request, photo_id):
+    photo = get_object_or_404(Photo, id=photo_id)
+    like, created = Like.objects.get_or_create(user=request.user, photo=photo)
+    
+    if not created:
+        # Se il like esisteva già, lo rimuoviamo
+        like.delete()
+        liked = False
+    else:
+        liked = True
+    
+    # Restituisce il nuovo stato del like e il conteggio totale
+    return JsonResponse({
+        'status': 'success',
+        'liked': liked,
+        'likes_count': photo.likes.count()
+    })
 
 def home(request):
     if request.user.is_authenticated:
@@ -621,9 +724,13 @@ def all_blogs(request):
     published_blogs = BlogSettings.objects.filter(is_published=True).select_related('user')
     print(f"DEBUG: Found {published_blogs.count()} published blogs")
     
-    # Ottieni foto casuali da blog pubblici
-    random_photos = get_random_photos(limit=15)
-    print(f"DEBUG: Found {len(random_photos)} random photos for all_blogs view")
+    # Ottieni foto popolari (con più visualizzazioni, like e commenti) da blog pubblici
+    popular_photos = get_popular_photos(limit=20)
+    print(f"DEBUG: Found {len(popular_photos)} popular photos for all_blogs view")
+    
+    # Ottieni anche alcune foto casuali per la barra laterale
+    sidebar_photos = get_random_photos(limit=4)
+    print(f"DEBUG: Found {len(sidebar_photos)} random photos for sidebar")
     
     # Verifica che il template esista e stampa il percorso completo
     from django.template.loader import get_template
@@ -645,12 +752,14 @@ def all_blogs(request):
     # Forza l'uso del template corretto
     context = {
         'published_blogs': published_blogs,
-        'random_photos': random_photos
+        'popular_photos': popular_photos,
+        'sidebar_photos': sidebar_photos
     }
     
     # Stampa il contesto per debug
     print(f"DEBUG: Context keys: {context.keys()}")
-    print(f"DEBUG: random_photos is empty: {len(random_photos) == 0}")
+    print(f"DEBUG: popular_photos count: {len(popular_photos)}")
+    print(f"DEBUG: sidebar_photos count: {len(sidebar_photos)}")
     
     # Forza l'uso del template all_blogs.html
     from django.template.loader import render_to_string
@@ -739,7 +848,7 @@ def add_comment_photo(request, photo_id):
     photo = get_object_or_404(Photo, id=photo_id)
     
     if request.method == 'POST':
-        content = request.POST.get('content')
+        content = request.POST.get('comment')
         if content:
             comment = Comment.objects.create(
                 user=request.user,
@@ -753,7 +862,8 @@ def add_comment_photo(request, photo_id):
                     'id': comment.id,
                     'content': comment.content,
                     'username': comment.user.username,
-                    'created_at': comment.created_at.strftime('%d/%m/%Y %H:%M')
+                    'created_at': comment.created_at.strftime('%d/%m/%Y %H:%M'),
+                    'comments_count': Comment.objects.filter(photo=photo).count()
                 })
             
             # Altrimenti, redirect alla pagina della foto
@@ -774,7 +884,7 @@ def add_comment_post(request, post_id):
     post = get_object_or_404(Post, id=post_id)
     
     if request.method == 'POST':
-        content = request.POST.get('content')
+        content = request.POST.get('comment')
         if content:
             comment = Comment.objects.create(
                 user=request.user,
@@ -788,7 +898,8 @@ def add_comment_post(request, post_id):
                     'id': comment.id,
                     'content': comment.content,
                     'username': comment.user.username,
-                    'created_at': comment.created_at.strftime('%d/%m/%Y %H:%M')
+                    'created_at': comment.created_at.strftime('%d/%m/%Y %H:%M'),
+                    'comments_count': Comment.objects.filter(photo=photo).count()
                 })
             
             # Altrimenti, redirect alla pagina del post

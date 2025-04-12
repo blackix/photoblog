@@ -1,9 +1,36 @@
 {% extends "blog/base.html" %}
 
 {% block content %}
+<!-- Modal per rinominare l'album -->
+<div class="modal fade" id="renameAlbumModal" tabindex="-1" aria-labelledby="renameAlbumModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="renameAlbumModalLabel">Rinomina Album</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form id="renameAlbumForm">
+                    <div class="mb-3">
+                        <label for="albumTitle" class="form-label">Nuovo titolo</label>
+                        <input type="text" class="form-control" id="albumTitle" required>
+                        <input type="hidden" id="albumId">
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annulla</button>
+                <button type="button" class="btn btn-primary" id="saveAlbumTitle">Salva</button>
+            </div>
+        </div>
+    </div>
+</div>
 <div class="container">
     <div class="d-flex align-items-center mb-4">
-        <h2 class="me-2">{{ album.title }}</h2>
+        <h2 class="me-2" id="album-title">{{ album.title }}</h2>
+        <button class="btn btn-sm btn-primary rename-album me-2" data-album-id="{{ album.id }}" title="Rinomina Album">
+            <i class="fas fa-edit"></i>
+        </button>
         <button class="btn btn-sm btn-danger delete-album" data-album-id="{{ album.id }}" title="Elimina Album">
             <i class="fas fa-trash"></i>
         </button>
@@ -445,6 +472,53 @@
                     }
                 });
             }
+        });
+        
+        // Rename album
+        $('.rename-album').on('click', function() {
+            const albumId = $(this).data('album-id');
+            const currentTitle = $('#album-title').text();
+            
+            // Popola il modal
+            $('#albumId').val(albumId);
+            $('#albumTitle').val(currentTitle);
+            
+            // Mostra il modal
+            const renameModal = new bootstrap.Modal(document.getElementById('renameAlbumModal'));
+            renameModal.show();
+        });
+        
+        // Salva il nuovo titolo dell'album
+        $('#saveAlbumTitle').on('click', function() {
+            const albumId = $('#albumId').val();
+            const newTitle = $('#albumTitle').val().trim();
+            
+            if (!newTitle) {
+                alert('Il titolo non può essere vuoto');
+                return;
+            }
+            
+            $.ajax({
+                url: `/album/${albumId}/rename/`,
+                type: 'POST',
+                data: {
+                    title: newTitle
+                },
+                headers: {
+                    'X-CSRFToken': '{{ csrf_token }}'
+                },
+                success: function(response) {
+                    // Aggiorna il titolo nella pagina
+                    $('#album-title').text(response.new_title);
+                    
+                    // Chiudi il modal
+                    bootstrap.Modal.getInstance(document.getElementById('renameAlbumModal')).hide();
+                },
+                error: function(xhr, status, error) {
+                    alert('Errore durante il rinomino dell\'album: ' + (xhr.responseJSON?.message || error));
+                    console.error(error);
+                }
+            });
         });
         
         // Delete album

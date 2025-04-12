@@ -92,10 +92,19 @@
         </div>
         
         <div class="photo-interactions">
-            <button id="modalLikeButton" class="btn-like" data-photo-id="">
-                <i class="fas fa-heart heart-icon"></i> <span id="modalLikeCount">0</span>
-            </button>
-            <span class="comment-count"><span id="commentCountModal">0</span> Commenti</span>
+            <div class="photo-stats">
+                <span class="stat-item">
+                    <i class="fas fa-eye"></i> <span id="viewCountModal">0</span>
+                </span>
+                <span class="stat-item">
+                    <button id="modalLikeButton" class="btn-like" data-photo-id="">
+                        <i class="fas fa-heart heart-icon"></i> <span id="modalLikeCount">0</span>
+                    </button>
+                </span>
+                <span class="stat-item">
+                    <i class="fas fa-comment"></i> <span id="commentCountModal">0</span>
+                </span>
+            </div>
         </div>
         
         <div class="photo-comments">
@@ -390,10 +399,32 @@
 
 .photo-interactions {
     display: flex;
-    justify-content: space-between;
+    justify-content: center;
     align-items: center;
     margin-bottom: 10px;
     padding: 0 20px;
+}
+
+.photo-stats {
+    display: flex;
+    justify-content: space-around;
+    width: 100%;
+    padding: 5px 0;
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.stat-item {
+    display: flex;
+    align-items: center;
+    color: #fff;
+    font-size: 0.9rem;
+    padding: 5px 10px;
+}
+
+.stat-item i {
+    margin-right: 5px;
+    font-size: 1rem;
 }
 
 .btn-like {
@@ -571,6 +602,9 @@
             $('#modalLikeButton').data('photo-id', photoId);
             $('#modalLikeButton').toggleClass('liked', !!photo.has_liked);
             $('#modalLikeCount').text(photo.likes_count || 0);
+            
+            // Update view count
+            $('#viewCountModal').text(photo.view_count || 0);
 
             // Update comment form data attribute and visibility
             $('#commentFormModal').data('photo-id', photoId);

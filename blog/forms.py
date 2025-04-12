@@ -20,14 +20,17 @@ class UserRegistrationForm(UserCreationForm):
 class BlogSettingsForm(forms.ModelForm):
     class Meta:
         model = BlogSettings
-        fields = ['blog_name', 'tagline', 'site_icon', 'is_published']
+        fields = ['blog_name', 'tagline', 'site_icon', 'symbol_icon', 'is_published']
         widgets = {
             'blog_name': forms.TextInput(attrs={'class': 'form-control'}),
             'tagline': forms.TextInput(attrs={'class': 'form-control'}),
             'site_icon': forms.FileInput(attrs={'class': 'form-control-file'}),
+            'symbol_icon': forms.FileInput(attrs={'class': 'form-control-file'}),
             'is_published': forms.CheckboxInput(attrs={'class': 'form-check-input'}),
         }
         labels = {
+            'site_icon': 'Foto profilo',
+            'symbol_icon': 'Icona simbolo',
             'is_published': 'Pubblica il blog',
         }
         help_texts = {

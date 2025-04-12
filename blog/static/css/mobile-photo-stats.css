@@ -1,0 +1,135 @@
+/* Stili per le statistiche delle foto nella versione mobile */
+
+.mobile-photo-stats {
+    display: flex;
+    justify-content: space-between;
+    padding: 12px 15px;
+    background-color: rgba(0, 0, 0, 0.05);
+    border-radius: 8px;
+    margin: 15px 0;
+}
+
+.dark-mode .mobile-photo-stats {
+    background-color: rgba(255, 255, 255, 0.05);
+}
+
+.mobile-stat-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    font-size: 0.85rem;
+    padding: 5px;
+    flex: 1;
+}
+
+.mobile-stat-item.clickable {
+    cursor: pointer;
+    transition: background-color 0.2s, transform 0.1s;
+    border-radius: 6px;
+}
+
+.mobile-stat-item.clickable:active {
+    background-color: rgba(0, 0, 0, 0.1);
+    transform: scale(0.95);
+}
+
+.dark-mode .mobile-stat-item.clickable:active {
+    background-color: rgba(255, 255, 255, 0.1);
+}
+
+.mobile-stat-item i {
+    font-size: 1.2rem;
+    margin-bottom: 3px;
+}
+
+.mobile-stat-item #mobileLikeIcon.text-danger {
+    color: #dc3545 !important;
+}
+
+.mobile-photo-actions {
+    display: flex;
+    justify-content: space-between;
+    margin: 15px 0;
+}
+
+.mobile-action-btn {
+    flex: 1;
+    padding: 8px;
+    border: none;
+    background: transparent;
+    border-radius: 4px;
+    color: inherit;
+    font-size: 0.9rem;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    transition: background-color 0.2s;
+}
+
+.mobile-action-btn i {
+    font-size: 1.2rem;
+    margin-bottom: 3px;
+}
+
+.mobile-action-btn:active {
+    background-color: rgba(0, 0, 0, 0.1);
+}
+
+.dark-mode .mobile-action-btn:active {
+    background-color: rgba(255, 255, 255, 0.1);
+}
+
+/* Stile per la sezione commenti */
+.mobile-comments-section {
+    margin-top: 15px;
+    border-top: 1px solid rgba(0, 0, 0, 0.1);
+    padding-top: 15px;
+}
+
+.dark-mode .mobile-comments-section {
+    border-top-color: rgba(255, 255, 255, 0.1);
+}
+
+.mobile-comments-section h4 {
+    font-size: 1.1rem;
+    margin-bottom: 10px;
+}
+
+.mobile-comments-list {
+    max-height: 300px;
+    overflow-y: auto;
+    margin-bottom: 15px;
+}
+
+.mobile-comment {
+    padding: 8px 0;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+}
+
+.dark-mode .mobile-comment {
+    border-bottom-color: rgba(255, 255, 255, 0.05);
+}
+
+.mobile-comment-header {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 3px;
+}
+
+.mobile-comment-author {
+    font-weight: bold;
+    font-size: 0.9rem;
+}
+
+.mobile-comment-date {
+    font-size: 0.8rem;
+    color: #777;
+}
+
+.dark-mode .mobile-comment-date {
+    color: #aaa;
+}
+
+.mobile-comment-text {
+    font-size: 0.9rem;
+}

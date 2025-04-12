@@ -19,6 +19,7 @@ urlpatterns = [
     path('m/album/create/', mobile_views.mobile_album_create, name='mobile_album_create'),
     path('m/album/<int:album_id>/upload/', mobile_views.mobile_upload_photos, name='mobile_upload_photos'),
     path('m/album/<int:album_id>/delete/', mobile_views.mobile_delete_album, name='mobile_delete_album'),
+    path('m/album/<int:album_id>/rename/', mobile_views.mobile_rename_album, name='mobile_rename_album'),
     path('m/photo/<int:photo_id>/delete/', mobile_views.mobile_delete_photo, name='mobile_delete_photo'),
     path('m/posts/', mobile_views.mobile_post_list, name='mobile_post_list'),
     path('m/post/create/', mobile_views.mobile_post_create, name='mobile_post_create'),
@@ -28,6 +29,7 @@ urlpatterns = [
     # API endpoints per la versione mobile
     path('api/blogs/', mobile_views.api_blogs, name='api_blogs'),
     path('api/photos/<int:photo_id>/', mobile_views.api_photo_detail, name='api_photo_detail'),
+    path('api/random-photos/', views.api_random_photos, name='api_random_photos'),
     path('api/photos/<int:photo_id>/comments/', mobile_views.api_photo_comments, name='api_photo_comments'),
     
     # URL standard
@@ -40,8 +42,10 @@ urlpatterns = [
     path('album/<int:pk>/', views.album_detail, name='album_detail'),
     path('album/<int:album_id>/upload/', views.upload_photos, name='upload_photos'),
     path('album/<int:album_id>/delete/', views.delete_album, name='delete_album'),
+    path('album/<int:album_id>/rename/', views.rename_album, name='rename_album'),
     path('photo/<int:photo_id>/delete/', views.delete_photo, name='delete_photo'),
     path('photo/<int:photo_id>/update/', views.update_photo, name='update_photo'),
+    path('photo/<int:photo_id>/like/', views.toggle_like, name='toggle_like'),
     path('toggle-dark-mode/', views.toggle_dark_mode, name='toggle_dark_mode'),
     path('photos/<int:photo_id>/update-caption/', views.update_photo_caption, name='update_photo_caption'),
     path('api/photo/<int:photo_id>/metadata/', views.get_photo_metadata, name='get_photo_metadata'),
