@@ -3,12 +3,36 @@
 <!-- Griglia di foto casuali con transizione -->
 <div class="sidebar-full mb-4">
     <div class="sidebar-photo-grid-title">Scopri</div>
-    <div class="sidebar-photo-grid">
+    <div class="sidebar-photo-grid" id="sidebar-photo-grid">
         {% for i in '1234'|make_list %}
         <div class="sidebar-photo-item" data-photo-id="" data-photo-url="">
-            <img src="{% static 'img/placeholder.jpg' %}" alt="Foto">
-            <div class="photo-overlay"></div>
+            <img src="{% static 'img/placeholder.jpg' %}" alt="Foto" onerror="this.onerror=null; this.src='{% static 'img/placeholder.jpg' %}';">
+            <div class="photo-overlay">
+                <span>Album</span>
+                <span>Utente</span>
+            </div>
         </div>
         {% endfor %}
     </div>
+    <!-- Indicatore di caricamento -->
+    <div id="photo-grid-loading" class="text-center d-none">
+        <small><i class="fas fa-spinner fa-spin me-1"></i> Caricamento foto...</small>
+    </div>
 </div>
+
+<!-- Script per verificare il caricamento della griglia -->
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        console.log('Sidebar photo grid template caricato');
+        // Verifica che il contenitore esista
+        const grid = document.getElementById('sidebar-photo-grid');
+        if (grid) {
+            console.log('Contenitore griglia trovato:', grid);
+            // Verifica che le immagini siano presenti
+            const images = grid.querySelectorAll('img');
+            console.log('Immagini trovate:', images.length);
+        } else {
+            console.error('Contenitore griglia non trovato!');
+        }
+    });
+</script>

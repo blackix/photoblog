@@ -106,11 +106,37 @@ $(document).ready(function() {
     function toggleLike(photoId) {
         console.log('Toggling like for photo ID:', photoId);
         
+        // Ottieni il token CSRF da diverse possibili fonti
+        let csrfToken = $('meta[name="csrf-token"]').attr('content');
+        if (!csrfToken) {
+            csrfToken = $('input[name="csrfmiddlewaretoken"]').val();
+        }
+        if (!csrfToken) {
+            csrfToken = document.cookie.split('; ')
+                .find(row => row.startsWith('csrftoken='))
+                ?.split('=')[1];
+        }
+        
+        console.log('CSRF Token trovato:', csrfToken ? 'Sì' : 'No');
+        
+        // Verifica se l'utente è autenticato
+        if (!isAuthenticated) {
+            console.warn('Utente non autenticato, impossibile mettere like');
+            alert('Devi accedere per mettere like alle foto');
+            return;
+        }
+        
         $.ajax({
             url: `/photo/${photoId}/like/`,
             method: 'POST',
             headers: {
-                'X-CSRFToken': $('meta[name="csrf-token"]').attr('content')
+                'X-CSRFToken': csrfToken
+            },
+            beforeSend: function(xhr, settings) {
+                console.log('Invio richiesta like con CSRF token:', csrfToken);
+                if (!this.crossDomain) {
+                    xhr.setRequestHeader("X-CSRFToken", csrfToken);
+                }
             },
             success: function(response) {
                 console.log('Like response:', response);
@@ -127,6 +153,8 @@ $(document).ready(function() {
             },
             error: function(xhr, status, error) {
                 console.error('Error toggling like:', error);
+                console.error('Status:', xhr.status);
+                console.error('Response text:', xhr.responseText);
                 
                 // Se l'errore è dovuto all'autenticazione (status 401 o 403)
                 if (xhr.status === 401 || xhr.status === 403) {
