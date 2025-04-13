@@ -810,7 +810,7 @@ def toggle_like_photo(request, photo_id):
     
     return JsonResponse({
         'liked': liked,
-        'likeCount': like_count
+        'likes_count': like_count
     })
 
 @login_required
@@ -837,7 +837,7 @@ def toggle_like_post(request, post_id):
     
     return JsonResponse({
         'liked': liked,
-        'likeCount': like_count
+        'likes_count': like_count
     })
 
 @login_required

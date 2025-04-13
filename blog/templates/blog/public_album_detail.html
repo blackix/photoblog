@@ -343,6 +343,8 @@
 {% endblock %}
 
 {% block content %}
+<!-- Elemento per verificare l'autenticazione dell'utente -->
+<div id="auth-status" data-is-authenticated="{{ user.is_authenticated|yesno:'true,false' }}" style="display: none;"></div>
 <div class="container" 
      data-get-comments-url-base="{% url 'get_photo_comments' photo_id=0 %}"
      data-add-comment-url-base="{% url 'add_comment_photo' photo_id=0 %}"

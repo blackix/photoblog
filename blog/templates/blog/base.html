@@ -510,6 +510,27 @@
         .sidebar-icon {
             display: none;
         }
+        
+        /* Stile per le frecce a tendina */
+        .dropdown-arrow {
+            transition: transform 0.3s ease;
+            cursor: pointer;
+            font-size: 14px;
+        }
+        
+        .sidebar-section-header {
+            cursor: pointer;
+            padding: 8px 0;
+            border-radius: 4px;
+        }
+        
+        .sidebar-section-header:hover {
+            background-color: rgba(0,0,0,0.05);
+        }
+        
+        .sidebar-section-header[aria-expanded="true"] .dropdown-arrow {
+            transform: rotate(180deg);
+        }
 
         #sidebar.collapsed .sidebar-full {
             display: none;
@@ -769,6 +790,27 @@
         }
     </style>
     {% block extra_head %}{% endblock %}
+    
+    <!-- Stili migliorati per la photo grid della sidebar -->
+    <style>
+        /* Stili migliorati per la transizione delle immagini */
+        .sidebar-photo-item img.fade-out {
+            opacity: 0.2;
+            transition: opacity 0.4s ease-out;
+        }
+        
+        .sidebar-photo-item img.fade-in {
+            opacity: 1;
+            transition: opacity 0.4s ease-in;
+        }
+        
+        /* Prevenire flickering durante il caricamento delle immagini */
+        .sidebar-photo-item {
+            position: relative;
+            min-height: 80px;
+            background-color: rgba(0,0,0,0.05);
+        }
+    </style>
 </head>
 <body data-theme="{% if user.is_authenticated and user.blogsettings.dark_mode %}dark{% else %}light{% endif %}"
       data-toggle-dark-mode-url="{% if user.is_authenticated %}{% url 'toggle_dark_mode' %}{% endif %}">
@@ -820,32 +862,42 @@
                 </div>
 
                 <div class="mb-4 mt-5">
-                    <h4 class="sidebar-full" style="font-weight: bold;">Album</h4>
-                    <ul class="list-unstyled">
-                        {% for album in request.user.album_set.all %}
-                            <li class="mb-2">
-                                <a href="{% url 'album_detail' album.pk %}" class="text-decoration-none">
-                                    <span class="sidebar-full" style="font-weight: lighter;">{{ album.title }}</span>
-                                    <i class="fas fa-images sidebar-icon" title="{{ album.title }}"></i>
-                                </a>
-                            </li>
-                        {% endfor %}
-                    </ul>
-                    <a href="{% url 'album_create' %}" class="btn sidebar-full">Nuovo Album</a>
+                    <div class="sidebar-section-header sidebar-full d-flex align-items-center justify-content-between" id="albumHeader">
+                        <h4 style="font-weight: bold; margin-bottom: 0;">Album</h4>
+                        <i class="fas fa-chevron-down dropdown-arrow"></i>
+                    </div>
+                    <div class="dropdown-content" id="albumList" style="display: none;">
+                        <ul class="list-unstyled mt-2">
+                            {% for album in request.user.album_set.all %}
+                                <li class="mb-2">
+                                    <a href="{% url 'album_detail' album.pk %}" class="text-decoration-none">
+                                        <span class="sidebar-full" style="font-weight: lighter;">{{ album.title }}</span>
+                                        <i class="fas fa-images sidebar-icon" title="{{ album.title }}"></i>
+                                    </a>
+                                </li>
+                            {% endfor %}
+                        </ul>
+                    </div>
+                    <a href="{% url 'album_create' %}" class="btn sidebar-full mt-2">Nuovo Album</a>
                     <a href="{% url 'album_create' %}" class="sidebar-icon" title="Nuovo Album"><i class="fas fa-plus"></i></a>
                 </div>
 
                 <div class="mb-4">
-                    <h5 class="sidebar-full" style="font-weight: bold;">Blog</h5>
-                    <ul class="list-unstyled">
-                        <li class="mb-2">
-                            <a href="{% url 'post_list' %}" class="text-decoration-none">
-                                <span class="sidebar-full" >I tuoi Post</span>
-                                <i class="fas fa-file-alt sidebar-icon" title="I tuoi Post"></i>
-                            </a>
-                        </li>
-                    </ul>
-                    <a href="{% url 'post_create' %}" class="btn sidebar-full">Nuovo Post</a>
+                    <div class="sidebar-section-header sidebar-full d-flex align-items-center justify-content-between" id="blogHeader">
+                        <h5 style="font-weight: bold; margin-bottom: 0;">Blog</h5>
+                        <i class="fas fa-chevron-down dropdown-arrow"></i>
+                    </div>
+                    <div class="dropdown-content" id="postList" style="display: none;">
+                        <ul class="list-unstyled mt-2">
+                            <li class="mb-2">
+                                <a href="{% url 'post_list' %}" class="text-decoration-none">
+                                    <span class="sidebar-full" >I tuoi Post</span>
+                                    <i class="fas fa-file-alt sidebar-icon" title="I tuoi Post"></i>
+                                </a>
+                            </li>
+                        </ul>
+                    </div>
+                    <a href="{% url 'post_create' %}" class="btn sidebar-full mt-2">Nuovo Post</a>
                     <a href="{% url 'post_create' %}" class="sidebar-icon" title="Nuovo Post"><i class="fas fa-plus"></i></a>
                 </div>
                 
@@ -1167,41 +1219,56 @@
                                 return;
                             }
                             
-                            // Aggiungi gestione errori per il caricamento dell'immagine
+                            // Precarica l'immagine per evitare flickering
+                            const preloadImg = new Image();
+                            
+                            // Gestione errori per il caricamento dell'immagine
                             img.onerror = function() {
                                 console.error(`Errore caricamento immagine ${index+1}:`, photo.image_url);
                                 this.src = '/static/img/placeholder.jpg';
                                 this.alt = 'Immagine non disponibile';
                             };
                             
-                            // Aggiungi classe per l'animazione di fade out
+                            // Aggiungi classe per l'animazione di fade out (più veloce)
                             img.classList.add('fade-out');
                             
-                            // Dopo un ritardo più lungo per un crossfade lento, aggiorna l'immagine e fai il fade in
-                            setTimeout(() => {
-                                img.src = photo.image_url;
-                                img.alt = photo.caption || 'Foto';
-                                item.dataset.photoId = photo.id;
-                                item.dataset.photoUrl = `/blog/${photo.username}/`;
-                                item.dataset.albumId = photo.album_id;
-                                item.dataset.username = photo.username;
-                                
-                                if (overlay) {
-                                    overlay.innerHTML = `
-                                        <span>${photo.album_title || 'Album'}</span>
-                                        <span>${photo.username || 'Utente'}</span>
-                                    `;
-                                }
-                                
-                                // Rimuovi la classe fade-out e aggiungi fade-in
-                                img.classList.remove('fade-out');
-                                img.classList.add('fade-in');
-                                
-                                // Dopo l'animazione, rimuovi la classe fade-in
+                            // Precarica l'immagine prima di mostrarla
+                            preloadImg.onload = function() {
+                                // Quando l'immagine è caricata, aggiornala nell'interfaccia
                                 setTimeout(() => {
-                                    img.classList.remove('fade-in');
-                                }, 1500); // Durata più lunga per il fade-in
-                            }, 1500); // Durata più lunga per il fade-out
+                                    img.src = photo.image_url;
+                                    img.alt = photo.caption || 'Foto';
+                                    item.dataset.photoId = photo.id;
+                                    item.dataset.photoUrl = `/blog/${photo.username}/`;
+                                    item.dataset.albumId = photo.album_id;
+                                    item.dataset.username = photo.username;
+                                    
+                                    if (overlay) {
+                                        overlay.innerHTML = `
+                                            <span>${photo.album_title || 'Album'}</span>
+                                            <span>${photo.username || 'Utente'}</span>
+                                        `;
+                                    }
+                                    
+                                    // Rimuovi la classe fade-out e aggiungi fade-in
+                                    img.classList.remove('fade-out');
+                                    img.classList.add('fade-in');
+                                    
+                                    // Dopo l'animazione, rimuovi la classe fade-in
+                                    setTimeout(() => {
+                                        img.classList.remove('fade-in');
+                                    }, 500); // Durata più breve per il fade-in
+                                }, 400); // Durata più breve per il fade-out
+                            };
+                            
+                            // Gestione errori per il precaricamento
+                            preloadImg.onerror = function() {
+                                console.error(`Errore precaricamento immagine ${index+1}:`, photo.image_url);
+                                img.onerror();
+                            };
+                            
+                            // Avvia il precaricamento
+                            preloadImg.src = photo.image_url;
                         } catch (e) {
                             console.error(`Errore nell'aggiornamento dell'elemento ${index+1}:`, e);
                         }
@@ -1214,8 +1281,8 @@
             
             // Funzione per avviare la transizione periodica delle foto
             function startPhotoTransition() {
-                // Cambia le foto ogni 20 secondi
-                transitionTimer = setInterval(updatePhotoGrid, 20000);
+                // Cambia le foto ogni 15 secondi (ridotto da 20)
+                transitionTimer = setInterval(updatePhotoGrid, 15000);
             }
             
             // Gestione del click sulle foto della griglia
@@ -1500,6 +1567,37 @@
             
             // Initialize dark mode icon
             updateDarkModeIcon();
+
+            // Gestione delle tendine a scomparsa nel menu laterale con jQuery
+            $('#albumHeader').on('click', function() {
+                const $content = $('#albumList');
+                const $arrow = $(this).find('.dropdown-arrow');
+                
+                // Toggle della visibilità con animazione più veloce
+                $content.slideToggle(150);
+                
+                // Ruota la freccia
+                if ($content.is(':visible')) {
+                    $arrow.css('transform', 'rotate(180deg)');
+                } else {
+                    $arrow.css('transform', 'rotate(0deg)');
+                }
+            });
+            
+            $('#blogHeader').on('click', function() {
+                const $content = $('#postList');
+                const $arrow = $(this).find('.dropdown-arrow');
+                
+                // Toggle della visibilità con animazione più veloce
+                $content.slideToggle(150);
+                
+                // Ruota la freccia
+                if ($content.is(':visible')) {
+                    $arrow.css('transform', 'rotate(180deg)');
+                } else {
+                    $arrow.css('transform', 'rotate(0deg)');
+                }
+            });
 
             // Inizializza slideshow se presente
             initializeSlideshow();

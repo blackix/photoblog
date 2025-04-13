@@ -45,7 +45,7 @@ urlpatterns = [
     path('album/<int:album_id>/rename/', views.rename_album, name='rename_album'),
     path('photo/<int:photo_id>/delete/', views.delete_photo, name='delete_photo'),
     path('photo/<int:photo_id>/update/', views.update_photo, name='update_photo'),
-    path('photo/<int:photo_id>/like/', views.toggle_like, name='toggle_like'),
+    # Rimosso URL duplicato per toggle_like
     path('toggle-dark-mode/', views.toggle_dark_mode, name='toggle_dark_mode'),
     path('photos/<int:photo_id>/update-caption/', views.update_photo_caption, name='update_photo_caption'),
     path('api/photo/<int:photo_id>/metadata/', views.get_photo_metadata, name='get_photo_metadata'),
