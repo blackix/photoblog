@@ -3,7 +3,10 @@ from django.contrib.auth.models import User
 from django.utils import timezone
 from django.utils.text import slugify
 from django.urls import reverse
+from django.core.files.base import ContentFile
+from PIL import Image
 import os
+import io
 
 # Create your models here.
 
@@ -34,17 +37,48 @@ class Album(models.Model):
 class Photo(models.Model):
     album = models.ForeignKey(Album, on_delete=models.CASCADE, related_name='photos')
     image = models.ImageField(upload_to='photos/')
+    thumbnail = models.ImageField(upload_to='photos/thumbnails/', blank=True, null=True)
     caption = models.CharField(max_length=200, blank=True)
     description = models.TextField(blank=True)
     upload_date = models.DateTimeField(auto_now_add=True)
     metadata = models.JSONField(default=dict, blank=True)
     view_count = models.PositiveIntegerField(default=0, help_text='Numero di visualizzazioni della foto')
+    
+    def create_thumbnail(self):
+        """Crea un thumbnail a bassa risoluzione dell'immagine originale"""
+        if not self.image:
+            return
+            
+        # Apri l'immagine originale
+        img = Image.open(self.image)
+        
+        # Mantieni l'aspect ratio ma riduci la dimensione
+        img.thumbnail((400, 400), Image.LANCZOS)
+        
+        # Salva il thumbnail
+        thumb_io = io.BytesIO()
+        img_format = 'JPEG' if img.format == 'JPEG' else 'PNG'
+        img.save(thumb_io, format=img_format, quality=70, optimize=True)
+        
+        # Genera un nome per il thumbnail basato sull'immagine originale
+        thumb_filename = os.path.splitext(os.path.basename(self.image.name))[0] + '_thumb' + os.path.splitext(self.image.name)[1]
+        
+        # Salva il thumbnail nel campo thumbnail
+        self.thumbnail.save(thumb_filename, ContentFile(thumb_io.getvalue()), save=False)
+        thumb_io.close()
+    
+    def save(self, *args, **kwargs):
+        # Se è un nuovo oggetto (senza ID) o l'immagine è stata cambiata
+        if not self.id or 'image' in kwargs.get('update_fields', []):
+            self.create_thumbnail()
+        super().save(*args, **kwargs)
 
     def delete(self, *args, **kwargs):
-        # Delete the image file when deleting the Photo object
-        if self.image:
-            if os.path.isfile(self.image.path):
-                os.remove(self.image.path)
+        # Elimina sia l'immagine originale che il thumbnail
+        if self.image and os.path.isfile(self.image.path):
+            os.remove(self.image.path)
+        if self.thumbnail and os.path.isfile(self.thumbnail.path):
+            os.remove(self.thumbnail.path)
         super().delete(*args, **kwargs)
 
     class Meta:

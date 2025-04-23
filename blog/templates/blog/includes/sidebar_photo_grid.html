@@ -1,26 +1,42 @@
 {% load static %}
 
-<!-- Griglia di foto casuali con transizione -->
-<div class="sidebar-full mb-4">
-    <div class="sidebar-photo-grid-title">Scopri</div>
-    <div class="sidebar-photo-grid" id="sidebar-photo-grid">
-        {% for i in '1234'|make_list %}
-        <div class="sidebar-photo-item" data-photo-id="" data-photo-url="">
-            <img src="{% static 'img/placeholder.jpg' %}" alt="Foto" onerror="this.onerror=null; this.src='{% static 'img/placeholder.jpg' %}';">
-            <div class="photo-overlay">
-                <span>Album</span>
-                <span>Utente</span>
-            </div>
-        </div>
-        {% endfor %}
+<!-- Sezione Scopri con griglia di foto e pulsante Esplora -->
+<div class="sidebar-section mb-5">
+    <div class="sidebar-section-header sidebar-full d-flex align-items-center justify-content-between" id="scopriHeader">
+        <h5 style="font-weight: bold; margin-bottom: 0;">Scopri</h5>
+        <i class="fas fa-chevron-down dropdown-arrow"></i>
     </div>
-    <!-- Indicatore di caricamento -->
-    <div id="photo-grid-loading" class="text-center d-none">
-        <small><i class="fas fa-spinner fa-spin me-1"></i> Caricamento foto...</small>
+    
+    <div class="dropdown-content" id="scopriContent" style="display: block;">
+        <!-- Griglia di foto casuali con transizione -->
+        <div class="sidebar-photo-grid mt-4 mb-4" id="sidebar-photo-grid">
+            {% for i in '1234'|make_list %}
+            <div class="sidebar-photo-item" data-photo-id="" data-photo-url="">
+                <img src="{% static 'img/placeholder.jpg' %}" alt="Foto" onerror="this.onerror=null; this.src='/static/img/placeholder.jpg';">
+                <div class="photo-overlay">
+                    <span>Album</span>
+                    <span>Utente</span>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        
+        <!-- Indicatore di caricamento -->
+        <div id="photo-grid-loading" class="text-center d-none mb-3">
+            <small><i class="fas fa-spinner fa-spin me-1"></i> Caricamento foto...</small>
+        </div>
+        
+        <!-- Pulsante Esplora -->
+        <div class="mt-4 mb-2">
+            <a href="{% url 'all_blogs' %}" class="btn btn-dark sidebar-full w-100">
+                <i class="fas fa-globe me-2"></i> Esplora
+            </a>
+            <a href="{% url 'all_blogs' %}" class="sidebar-icon" title="Esplora"><i class="fas fa-globe"></i></a>
+        </div>
     </div>
 </div>
 
-<!-- Script per verificare il caricamento della griglia -->
+<!-- Script per verificare il caricamento della griglia e gestire il menu a discesa -->
 <script>
     document.addEventListener('DOMContentLoaded', function() {
         console.log('Sidebar photo grid template caricato');
@@ -33,6 +49,45 @@
             console.log('Immagini trovate:', images.length);
         } else {
             console.error('Contenitore griglia non trovato!');
+        }
+        
+        // Gestione del menu a discesa per la sezione Scopri
+        const $header = $('#scopriHeader');
+        const $content = $('#scopriContent');
+        const $arrow = $header.find('.dropdown-arrow');
+        
+        // Imposta lo stato iniziale
+        if ($content.is(':visible')) {
+            $arrow.css('transform', 'rotate(180deg)');
+        } else {
+            $arrow.css('transform', 'rotate(0deg)');
+        }
+        
+        // Gestione del click sull'intestazione
+        $header.on('click', function() {
+            // Toggle della visibilità con animazione
+            $content.slideToggle(150, function() {
+                // Callback dopo l'animazione
+                if ($content.is(':visible')) {
+                    $arrow.css('transform', 'rotate(180deg)');
+                    // Salva lo stato nel localStorage
+                    localStorage.setItem('scopriContent_state', 'open');
+                } else {
+                    $arrow.css('transform', 'rotate(0deg)');
+                    // Salva lo stato nel localStorage
+                    localStorage.setItem('scopriContent_state', 'closed');
+                }
+            });
+        });
+        
+        // Ripristina lo stato dal localStorage
+        const savedState = localStorage.getItem('scopriContent_state');
+        if (savedState === 'closed') {
+            $content.hide();
+            $arrow.css('transform', 'rotate(0deg)');
+        } else {
+            $content.show();
+            $arrow.css('transform', 'rotate(180deg)');
         }
     });
 </script>

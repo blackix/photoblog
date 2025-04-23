@@ -163,14 +163,93 @@
         position: absolute;
         top: 0;
         left: 0;
-        width: 100%;
-        padding: 20px;
+        right: 0;
+        padding: 15px;
         display: flex;
         justify-content: space-between;
-        z-index: 10000;
+        z-index: 10;
+    }
+    
+    /* Barra del titolo della foto */
+    .photo-title-bar {
+        position: absolute;
+        bottom: 60px;
+        left: 0;
+        right: 0;
+        background-color: rgba(0, 0, 0, 0.7);
+        color: white;
+        padding: 15px 20px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        z-index: 100;
+    }
+    
+    .photo-title-bar h2 {
+        margin: 0;
+        font-size: 1.5rem;
+        font-weight: 500;
+        max-width: 70%;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+    
+    /* Pulsante di download */
+    .download-button {
+        background-color: #007bff;
+        color: white;
+        border: none;
+        border-radius: 4px;
+        padding: 8px 16px;
+        font-size: 0.9rem;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        text-decoration: none;
+        transition: background-color 0.3s;
+    }
+    
+    .download-button:hover {
+        background-color: #0069d9;
+        color: white;
+        text-decoration: none;
+    }
+    
+    .download-button i {
+        font-size: 1rem;
+    }
+    
+    [data-theme="dark"] .download-button {
+        background-color: #0d6efd;
+    }
+    
+    [data-theme="dark"] .download-button:hover {
+        background-color: #0b5ed7;
+    }
+    
+    /* Versione mobile */
+    @media (max-width: 768px) {
+        .photo-title-bar {
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 10px;
+            padding: 10px 15px;
+        }
+        
+        .photo-title-bar h2 {
+            max-width: 100%;
+            font-size: 1.2rem;
+        }
+        
+        .download-button {
+            align-self: flex-end;
+            padding: 6px 12px;
+            font-size: 0.8rem;
+        }
     }
 
-    .btn-slideshow-prev, .btn-slideshow-next, .btn-slideshow-close {
+    .btn-slideshow-prev, .btn-slideshow-next {
         background-color: rgba(0, 0, 0, 0.5);
         color: white;
         border: none;
@@ -184,8 +263,37 @@
         transition: background-color 0.3s;
     }
 
-    .btn-slideshow-prev:hover, .btn-slideshow-next:hover, .btn-slideshow-close:hover {
+    .btn-slideshow-prev:hover, .btn-slideshow-next:hover {
         background-color: rgba(0, 0, 0, 0.8);
+    }
+    
+    /* Pulsante di chiusura circolare con croce */
+    .close-button {
+        position: absolute;
+        top: 20px;
+        right: 20px;
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        background-color: white;
+        color: #333;
+        border: none;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+        z-index: 1000;
+        transition: all 0.2s ease;
+    }
+    
+    .close-button:hover {
+        transform: scale(1.1);
+    }
+    
+    [data-theme="dark"] .close-button {
+        background-color: #333;
+        color: white;
     }
 
     .slideshow-slides {
@@ -385,7 +493,13 @@
         {% for photo in photos %}
             <div class="photo-item" data-photo-id="{{ photo.id }}">
                 <div class="photo-frame">
-                    <img src="{{ photo.image.url }}" alt="Photo" class="photo-thumbnail" data-photo-id="{{ photo.id }}" data-photo-src="{{ photo.image.url }}" data-photo-title="{{ photo.title }}">
+                    <img src="{% if photo.thumbnail %}{{ photo.thumbnail.url }}{% else %}{{ photo.image.url }}{% endif %}" 
+                         alt="{{ photo.caption|default:'Photo' }}" 
+                         class="photo-thumbnail" 
+                         data-photo-id="{{ photo.id }}" 
+                         data-photo-src="{{ photo.image.url }}" 
+                         data-photo-title="{{ photo.caption }}" 
+                         loading="lazy">
                 </div>
                 {% if photo.caption %}
                 <div class="photo-caption">
@@ -437,12 +551,20 @@
         <button class="btn-slideshow-prev">
             <i class="fas fa-chevron-left"></i>
         </button>
-        <button class="btn-slideshow-close">
+        <button class="btn-slideshow-close close-button">
             <i class="fas fa-times"></i>
         </button>
         <button class="btn-slideshow-next">
             <i class="fas fa-chevron-right"></i>
         </button>
+    </div>
+    
+    <!-- Titolo foto con pulsante download -->
+    <div class="photo-title-bar">
+        <h2 id="photoTitle">Titolo foto</h2>
+        <a href="#" class="download-button" id="downloadButton" download>
+            <i class="fas fa-download"></i> Scarica originale
+        </a>
     </div>
     <div class="slideshow-slides">
         <!-- Slides will be populated dynamically -->
@@ -548,7 +670,7 @@
             }
 
             // Find index for navigation
-            currentPhotoIndex = photosData.findIndex(p => p.id === photo.id);
+            currentPhotoIndex = photosData.findIndex(p => p.id === photoId);
             if (currentPhotoIndex === -1) {
                 console.error("Could not find index for photo ID:", photo.id);
                 hideSlideshow();
@@ -575,6 +697,12 @@
             // Update comment form data attribute and visibility
             $('#commentFormModal').data('photo-id', photoId);
             const loginPrompt = $('.login-to-comment');
+            
+            // Update title and download button
+            $('#photoTitle').text(photo.caption || 'Senza titolo');
+            $('#downloadButton').attr('href', photo.image_url || photo.src);
+            $('#downloadButton').attr('download', (photo.caption || 'photo') + '.jpg');
+            
             if (!isAuthenticated) {
                 $('#commentFormModal').hide();
                 if(loginPrompt.length) loginPrompt.show();

@@ -20,15 +20,13 @@
         {% regroup photos_data by album_title as album_list %}
         
         {% for album in album_list %}
-            <div class="mobile-album-section">
-                <h2 class="mobile-album-title">{{ album.grouper }}</h2>
-                <div class="mobile-photo-grid">
+            <div class="mobile-album-section" style="background-color: #f5f5f5; border-radius: 8px; margin-bottom: 20px; overflow: hidden; box-shadow: 0 2px 10px rgba(0,0,0,0.1);">
+                <h2 class="mobile-album-title" style="background-color: #333333; color: #ffffff; padding: 10px 15px; margin: 0; border-radius: 8px 8px 0 0; font-weight: bold; text-transform: uppercase; font-size: 16px; letter-spacing: 1px;">{{ album.grouper }}</h2>
+                <div class="mobile-photo-grid" style="padding: 15px;">
                     {% for photo in album.list %}
                         <div class="mobile-photo-thumbnail" data-photo-id="{{ photo.id }}">
                             <img src="{{ photo.thumbnail_url|default:photo.image_url }}" alt="{{ photo.caption|default:'Foto' }}">
-                            <button class="vr-view-button" title="Visualizza in modalità VR" data-photo-url="{{ photo.image_url }}">
-                                <i class="fas fa-vr-cardboard"></i>
-                            </button>
+
                         </div>
                     {% endfor %}
                 </div>
@@ -46,8 +44,8 @@
             <i class="fas fa-arrow-left"></i>
         </button>
         <h3 class="mobile-modal-title">Foto</h3>
-        <button class="mobile-modal-vr-btn" id="mobileModalVrBtn">
-            <i class="fas fa-vr-cardboard"></i>
+        <button class="mobile-download-btn" id="mobileDownloadBtn">
+            <i class="fas fa-download"></i>
         </button>
     </div>
     
@@ -60,35 +58,21 @@
             <div class="mobile-photo-caption" id="mobileModalCaption"></div>
             <div class="mobile-photo-date" id="mobileModalDate"></div>
             
-            <div class="mobile-photo-stats">
-                <div class="mobile-stat-item clickable" id="mobileViewItem">
-                    <i class="fas fa-eye"></i> <span id="mobileViewCount">0</span> visualizzazioni
+            <div class="mobile-photo-metadata">
+                <!-- First row: Views and Likes -->
+                <div class="mobile-photo-stats" style="display: flex; justify-content: space-between; margin-bottom: 10px; padding: 8px 0; border-bottom: 1px solid #eee;">
+                    <div class="mobile-stat-item" id="mobileViewItem">
+                        <i class="fas fa-eye"></i> <span id="mobileViewCount">0</span> visualizzazioni
+                    </div>
+                    <div class="mobile-stat-item clickable" id="mobileLikeItem">
+                        <i class="far fa-heart" id="mobileLikeIcon"></i> <span id="mobileLikeCount">0</span> like
+                    </div>
                 </div>
-                <div class="mobile-stat-item clickable" id="mobileLikeItem">
-                    <i class="far fa-heart" id="mobileLikeIcon"></i> <span id="mobileLikeCount">0</span> like
+                <!-- Second row: Camera metadata -->
+                <div style="display: flex; flex-direction: column; gap: 5px; font-size: 0.9em; color: #666;">
+                    <div id="mobileModalCamera" style="font-weight: 500;"></div>
+                    <div id="mobileModalSettings" style="letter-spacing: 0.5px;"></div>
                 </div>
-                <div class="mobile-stat-item clickable" id="mobileCommentItem">
-                    <i class="far fa-comment"></i> <span id="mobileCommentCount">0</span> commenti
-                </div>
-                <div class="mobile-stat-item clickable" id="mobileShareItem">
-                    <i class="fas fa-share-alt"></i>
-                </div>
-            </div>
-            
-            <div class="mobile-comments-section">
-                <h4>Commenti</h4>
-                <div class="mobile-comments-list" id="mobileCommentsList"></div>
-                
-                {% if user.is_authenticated %}
-                <div class="mobile-comment-form">
-                    <textarea placeholder="Aggiungi un commento..." id="mobileCommentText"></textarea>
-                    <button id="mobileSubmitComment">Invia</button>
-                </div>
-                {% else %}
-                <div class="mobile-login-to-comment">
-                    <a href="{% url 'login' %}">Accedi</a> per lasciare un commento
-                </div>
-                {% endif %}
             </div>
         </div>
     </div>
@@ -97,6 +81,54 @@
 {% endblock %}
 
 {% block extra_js %}
+<style>
+    /* Stili per la modalità dark */
+    [data-theme="dark"] .mobile-album-section {
+        background-color: #333333 !important;
+    }
+    
+    [data-theme="dark"] .mobile-album-title {
+        background-color: #ffffff !important;
+        color: #121212 !important;
+    }
+    
+    [data-theme="dark"] .mobile-photo-grid {
+        color: #e0e0e0 !important;
+    }
+    
+    .mobile-photo-modal-header {
+        display: flex;
+        align-items: center;
+        padding: 15px;
+        background-color: var(--header-bg);
+        color: var(--header-text);
+        position: sticky;
+        top: 0;
+        z-index: 10;
+    }
+    
+    .mobile-download-btn {
+        margin-left: auto;
+        color: var(--header-text);
+        font-size: 1.2rem;
+        padding: 8px;
+        border-radius: 50%;
+        background-color: rgba(255, 255, 255, 0.2);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 40px;
+        height: 40px;
+        border: none;
+        cursor: pointer;
+        transition: background-color 0.2s ease;
+    }
+    
+    .mobile-download-btn:hover,
+    .mobile-download-btn:active {
+        background-color: rgba(255, 255, 255, 0.3);
+    }
+</style>
 <script>
     $(document).ready(function() {
         // Variabile per tenere traccia dell'ID della foto corrente
@@ -108,18 +140,73 @@
             openMobilePhotoModal(photoId);
         });
         
+        // Chiudi il modal quando si clicca sul pulsante di chiusura
         $('.mobile-modal-close-btn').on('click', function() {
             closeMobilePhotoModal();
         });
         
-        // Gestione pulsante VR nel modal
-        $('#mobileModalVrBtn').on('click', function() {
-            const photoUrl = $('#mobileModalPhoto').attr('src');
-            if (window.vrPhotoViewer) {
-                window.vrPhotoViewer.openPhotoInVR(photoUrl);
+        // Gestisci il download delle immagini quando si clicca sul pulsante di download
+        $('#mobileDownloadBtn').on('click', function() {
+            const imageUrl = $(this).data('imageUrl');
+            const filename = $(this).data('filename');
+            
+            if (!imageUrl) {
+                console.error('URL immagine non disponibile');
+                return;
             }
-            closeMobilePhotoModal();
+            
+            // Soluzione compatibile con iOS
+            downloadImage(imageUrl, filename);
         });
+        
+        // Funzione per scaricare l'immagine compatibile con iOS
+        function downloadImage(url, filename) {
+            // Crea un elemento canvas temporaneo
+            const canvas = document.createElement('canvas');
+            const ctx = canvas.getContext('2d');
+            
+            // Crea un'immagine e imposta l'URL
+            const img = new Image();
+            img.crossOrigin = 'anonymous'; // Importante per CORS
+            
+            // Quando l'immagine è caricata
+            img.onload = function() {
+                // Imposta le dimensioni del canvas
+                canvas.width = img.width;
+                canvas.height = img.height;
+                
+                // Disegna l'immagine sul canvas
+                ctx.drawImage(img, 0, 0);
+                
+                // Converti il canvas in un blob
+                canvas.toBlob(function(blob) {
+                    // Crea un URL per il blob
+                    const blobUrl = URL.createObjectURL(blob);
+                    
+                    // Crea un link temporaneo
+                    const link = document.createElement('a');
+                    link.href = blobUrl;
+                    link.download = filename;
+                    
+                    // Aggiungi il link al documento, clicca e rimuovi
+                    document.body.appendChild(link);
+                    link.click();
+                    document.body.removeChild(link);
+                    
+                    // Rilascia l'URL del blob
+                    setTimeout(() => URL.revokeObjectURL(blobUrl), 100);
+                }, 'image/jpeg', 0.95); // Formato e qualità
+            };
+            
+            // Gestisci gli errori
+            img.onerror = function() {
+                console.error('Errore durante il caricamento dell\'immagine:', url);
+                alert('Impossibile scaricare l\'immagine. Riprova più tardi.');
+            };
+            
+            // Imposta l'URL dell'immagine per avviare il caricamento
+            img.src = url;
+        }
         
         // Funzione per aprire il modal con una foto specifica
         function openMobilePhotoModal(photoId) {
@@ -129,11 +216,16 @@
             // Imposta la foto come attiva
             $('.mobile-photo-thumbnail').removeClass('active');
             $(`.mobile-photo-thumbnail[data-photo-id="${photoId}"]`).addClass('active');
+            // Mostra subito il modal per dare feedback visivo immediato
+            $('#mobilePhotoModal').addClass('show');
+            $('body').addClass('modal-open');
+            
             // Carica i dati della foto
             $.ajax({
                 url: `/api/photos/${photoId}/`,
                 method: 'GET',
                 success: function(data) {
+                    console.log('Photo data received:', data);
                     $('#mobileModalPhoto').attr('src', data.image_url);
                     $('#mobileModalCaption').text(data.caption || '');
                     $('#mobileModalDate').text(data.upload_date || '');
@@ -141,25 +233,56 @@
                     // Aggiorna le statistiche
                     $('#mobileViewCount').text(data.view_count || 0);
                     $('#mobileLikeCount').text(data.likes_count || 0);
-                    $('#mobileCommentCount').text(data.comments_count || 0);
                     $('.mobile-modal-title').text(data.album_title || 'Foto');
                     
-                    // Aggiorna lo stato del pulsante like
-                    if (data.has_liked) {
+                    // Salva l'URL dell'immagine per il download
+                    $('#mobileDownloadBtn').data('imageUrl', data.image_url);
+                    $('#mobileDownloadBtn').data('filename', (data.caption || 'photo') + '.jpg');
+                    
+                    // Aggiorna metadati della foto in modo più visibile e debug
+                    console.log('Camera model:', data.camera_model);
+                    console.log('Focal length:', data.focal_length);
+                    console.log('F-number:', data.f_number);
+                    console.log('Exposure:', data.exposure);
+                    console.log('ISO:', data.iso);
+                    
+                    // Mostra i metadati della fotocamera se disponibili
+                    if (data.camera_model) {
+                        $('#mobileModalCamera').html(`<strong>Camera:</strong> ${data.camera_model}`);
+                    } else {
+                        $('#mobileModalCamera').html("");
+                    }
+                    
+                    // Raccogli le impostazioni disponibili
+                    const settings = [];
+                    if (data.focal_length) settings.push(`${data.focal_length}`);
+                    if (data.f_number) settings.push(`f/${data.f_number}`);
+                    if (data.exposure) settings.push(`${data.exposure}s`);
+                    if (data.iso) settings.push(`ISO ${data.iso}`);
+                    
+                    // Mostra le impostazioni o un messaggio se non disponibili
+                    if (settings.length > 0) {
+                        $('#mobileModalSettings').html(settings.join(" | "));
+                    } else {
+                        $('#mobileModalSettings').html("<em>Nessun dato EXIF disponibile</em>");
+                    }
+                    
+                    // Check if user has liked this photo (using localStorage)
+                    const likedPhotosKey = 'likedPhotos';
+                    let likedPhotos = JSON.parse(localStorage.getItem(likedPhotosKey) || '{}');
+                    
+                    if (likedPhotos[photoId]) {
                         $('#mobileLikeIcon').removeClass('far').addClass('fas text-danger');
                     } else {
                         $('#mobileLikeIcon').removeClass('fas text-danger').addClass('far');
                     }
-                    
-                    // Carica i commenti
-                    loadMobileComments(photoId);
-                    
-                    // Mostra il modal
-                    $('#mobilePhotoModal').addClass('show');
-                    $('body').addClass('modal-open');
                 },
-                error: function() {
-                    console.error('Errore nel caricamento della foto');
+                error: function(xhr, status, error) {
+                    console.error('Error loading photo data:', error);
+                    console.log('Status:', status);
+                    console.log('Response:', xhr.responseText);
+                    alert('Errore nel caricamento della foto. Riprova più tardi.');
+                    closeMobilePhotoModal();
                 }
             });
         }
@@ -170,35 +293,7 @@
             $('body').removeClass('modal-open');
         }
         
-        // Funzione per caricare i commenti
-        function loadMobileComments(photoId) {
-            const commentsList = $('#mobileCommentsList');
-            commentsList.empty();
-            
-            $.ajax({
-                url: `/api/photos/${photoId}/comments/`,
-                method: 'GET',
-                success: function(data) {
-                    if (data.comments && data.comments.length > 0) {
-                        data.comments.forEach(comment => {
-                            const commentHtml = `
-                                <div class="mobile-comment">
-                                    <div class="mobile-comment-author">${comment.author}</div>
-                                    <div class="mobile-comment-text">${comment.text}</div>
-                                    <div class="mobile-comment-date">${comment.date}</div>
-                                </div>
-                            `;
-                            commentsList.append(commentHtml);
-                        });
-                    } else {
-                        commentsList.html('<div class="mobile-no-comments">Nessun commento</div>');
-                    }
-                },
-                error: function() {
-                    commentsList.html('<div class="mobile-comments-error">Errore nel caricamento dei commenti</div>');
-                }
-            });
-        }
+        // Comments functionality removed
         
         // Gestione click sulle statistiche
         $('#mobileLikeItem').on('click', function() {
@@ -227,7 +322,7 @@
             }
         });
         
-        // Funzione per aggiungere/rimuovere like
+        // Funzione per aggiungere/rimuovere like (client-side per tutti gli utenti)
         function toggleMobileLike(photoId) {
             console.log('Toggling like for photo ID:', photoId);
             
@@ -236,93 +331,27 @@
                 return;
             }
             
-            // Ottieni il token CSRF
-            const csrfToken = $('meta[name="csrf-token"]').attr('content');
-            console.log('CSRF Token:', csrfToken);
+            // Client-side like using localStorage
+            const likedPhotosKey = 'likedPhotos';
+            let likedPhotos = JSON.parse(localStorage.getItem(likedPhotosKey) || '{}');
             
-            // Effetto visivo immediato (ottimistico)
-            const $icon = $('#mobileLikeIcon');
-            const isLiked = $icon.hasClass('fas');
+            // Toggle like status
+            const isLiked = likedPhotos[photoId];
             const currentCount = parseInt($('#mobileLikeCount').text()) || 0;
             
             if (isLiked) {
-                $icon.removeClass('fas text-danger').addClass('far');
+                delete likedPhotos[photoId];
+                $('#mobileLikeIcon').removeClass('fas text-danger').addClass('far');
                 $('#mobileLikeCount').text(Math.max(0, currentCount - 1));
             } else {
-                $icon.removeClass('far').addClass('fas text-danger');
+                likedPhotos[photoId] = true;
+                $('#mobileLikeIcon').removeClass('far').addClass('fas text-danger');
                 $('#mobileLikeCount').text(currentCount + 1);
             }
             
-            $.ajax({
-                url: `/photo/${photoId}/like/`,
-                method: 'POST',
-                headers: {
-                    'X-CSRFToken': csrfToken
-                },
-                xhrFields: {
-                    withCredentials: true
-                },
-                success: function(response) {
-                    console.log('Like response:', response);
-                    
-                    // Aggiorna il conteggio dei like
-                    $('#mobileLikeCount').text(response.likes_count);
-                    
-                    // Aggiorna lo stato del pulsante like
-                    if (response.liked) {
-                        $('#mobileLikeIcon').removeClass('far').addClass('fas text-danger');
-                    } else {
-                        $('#mobileLikeIcon').removeClass('fas text-danger').addClass('far');
-                    }
-                },
-                error: function(xhr, status, error) {
-                    console.error('Error toggling like:', error);
-                    
-                    // Ripristina lo stato precedente dell'icona e del contatore
-                    const $icon = $('#mobileLikeIcon');
-                    const isCurrentlyLiked = $icon.hasClass('fas');
-                    const currentCount = parseInt($('#mobileLikeCount').text()) || 0;
-                    
-                    if (isCurrentlyLiked) {
-                        $icon.removeClass('fas text-danger').addClass('far');
-                        $('#mobileLikeCount').text(Math.max(0, currentCount - 1));
-                    } else {
-                        $icon.removeClass('far').addClass('fas text-danger');
-                        $('#mobileLikeCount').text(currentCount + 1);
-                    }
-                    
-                    // Se l'errore è dovuto all'autenticazione (status 401 o 403)
-                    if (xhr.status === 401 || xhr.status === 403) {
-                        alert('Devi accedere per mettere like alle foto');
-                    } else {
-                        alert('Si è verificato un errore. Riprova più tardi.');
-                    }
-                }
-            });
+            // Save updated likes to localStorage
+            localStorage.setItem(likedPhotosKey, JSON.stringify(likedPhotos));
         }
-        
-        // Gestione invio commenti
-        $('#mobileSubmitComment').on('click', function() {
-            const text = $('#mobileCommentText').val().trim();
-            
-            if (text && currentPhotoId) {
-                $.ajax({
-                    url: `/photo/${currentPhotoId}/comment/`,
-                    method: 'POST',
-                    data: {
-                        comment: text,
-                        csrfmiddlewaretoken: $('meta[name="csrf-token"]').attr('content')
-                    },
-                    success: function() {
-                        $('#mobileCommentText').val('');
-                        loadMobileComments(photoId);
-                    },
-                    error: function() {
-                        alert('Errore nell\'invio del commento');
-                    }
-                });
-            }
-        });
     });
 </script>
 {% endblock %}

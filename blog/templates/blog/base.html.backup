@@ -329,18 +329,6 @@
         :root {
             --photo-grid-bg: #ffffff;
         }
-        
-        /* Stile per i pulsanti del selettore di colori in modalità dark */
-        [data-theme="dark"] .color-option {
-            border: 2px solid #444 !important;
-            outline: 1px solid #666;
-        }
-        
-        [data-theme="dark"] .color-option.active {
-            border: 2px solid var(--accent-color) !important;
-            box-shadow: 0 0 8px var(--accent-color);
-            outline: 1px solid var(--accent-color);
-        }
 
         #sidebar.collapsed + #content {
             margin-left: 0;
@@ -885,10 +873,9 @@
             <div class="d-flex justify-content-end align-items-center mb-4">
                 <!-- Dark mode toggle moved to top navbar -->
             </div>
-            <div style="height: 60px;"><!-- Spazio vuoto aggiuntivo in alto --></div>
 
             {% if user.is_authenticated %}
-                <div class="text-center mb-5">
+                <div class="text-center mb-4">
                     <div class="user-menu-container">
                         {% if user.blogsettings.site_icon %}
                             <img src="{{ user.blogsettings.site_icon.url }}" alt="{{ user.username }}" class="user-avatar mb-2" id="userMenuToggle" onclick="toggleUserMenu(event)">
@@ -927,7 +914,7 @@
                     <p class="text-muted">{{ user.blogsettings.tagline }}</p>
                 </div>
 
-                <div class="mb-5 sidebar-section">
+                <div class="mb-4 sidebar-section">
                     <div class="sidebar-section-header sidebar-full d-flex align-items-center justify-content-between" id="albumsHeader">
                         <h5 style="font-weight: bold; margin-bottom: 0;">Album</h5>
                         <i class="fas fa-chevron-down dropdown-arrow"></i>
@@ -959,7 +946,7 @@
                     </div>
                 </div>
 
-                <div class="mb-5 sidebar-section">
+                <div class="mb-4 sidebar-section">
                     <div class="sidebar-section-header sidebar-full d-flex align-items-center justify-content-between" id="postsHeader">
                         <h5 style="font-weight: bold; margin-bottom: 0;">Post</h5>
                         <i class="fas fa-chevron-down dropdown-arrow"></i>
@@ -987,6 +974,14 @@
                 
                 {% include "blog/includes/sidebar_photo_grid.html" %}
                 
+                <!-- Pulsante Esplora sotto la mini galleria -->
+                <div class="mt-3 mb-3">
+                    <a href="{% url 'all_blogs' %}" class="btn btn-dark sidebar-full w-100">
+                        <i class="fas fa-globe me-2"></i> Esplora
+                    </a>
+                    <a href="{% url 'all_blogs' %}" class="sidebar-icon" title="Esplora"><i class="fas fa-globe"></i></a>
+                </div>
+                
                 <!-- Footer con crediti - bloccato in basso -->
                 <div class="text-center mt-auto mb-2 sidebar-full" style="font-size: 0.8em; color: #888;">
                     <div class="d-flex justify-content-center">
@@ -1010,7 +1005,7 @@
                 </div>
                 
                 <!-- Visualizzazione album pubblici per utenti non autenticati -->
-                <div class="mb-5">
+                <div class="mb-4">
                     <h5 class="sidebar-full">Album</h5>
                     <ul class="list-unstyled">
                         {% for user in users_with_published_blogs %}
@@ -1032,7 +1027,7 @@
                 </div>
                 
                 <!-- Visualizzazione post blog per utenti non autenticati -->
-                <div class="mb-5">
+                <div class="mb-4">
                     <h5 class="sidebar-full">Blog</h5>
                     <ul class="list-unstyled">
                         {% for user in users_with_published_blogs %}
@@ -1046,6 +1041,14 @@
                 </div>
                 
                 {% include "blog/includes/sidebar_photo_grid.html" %}
+                
+                <!-- Pulsante Esplora sotto la mini galleria -->
+                <div class="mt-3 mb-3">
+                    <a href="{% url 'all_blogs' %}" class="btn btn-dark sidebar-full w-100">
+                        <i class="fas fa-globe me-2"></i> Esplora
+                    </a>
+                    <a href="{% url 'all_blogs' %}" class="sidebar-icon" title="Esplora"><i class="fas fa-globe"></i></a>
+                </div>
                 
                 <!-- Footer con crediti - bloccato in basso -->
                 <div class="text-center mt-auto mb-2 sidebar-full" style="font-size: 0.8em; color: #888;">
@@ -1512,67 +1515,28 @@
 
             // User menu is now handled by the setupUserMenu function
             
-            // Photo grid background color selector - Versione corretta
-            $('.color-option').off('click').on('click', function() {
+            // Photo grid background color selector
+            $('.color-option').click(function() {
                 const selectedColor = $(this).data('color');
-                
-                // Imposta il colore direttamente
                 document.documentElement.style.setProperty('--photo-grid-bg', selectedColor);
                 
-                // Aggiorna lo stato attivo visivamente
-                $('.color-option').removeClass('active');
-                $(this).addClass('active');
-                
-                // Salva la preferenza in localStorage
+                // Save preference to localStorage
                 localStorage.setItem('photoGridBgColor', selectedColor);
                 
-                // Debug
-                console.log('Colore selezionato:', selectedColor);
-                console.log('Elemento attivo:', $(this).hasClass('active'));
+                // Update active state
+                $('.color-option').removeClass('active');
+                $(this).addClass('active');
             });
             
-            // Funzione per inizializzare il selettore di colori
-            function initColorSelector() {
-                // Carica la preferenza salvata
-                const savedColor = localStorage.getItem('photoGridBgColor');
-                
-                if (savedColor) {
-                    // Imposta il colore salvato
-                    document.documentElement.style.setProperty('--photo-grid-bg', savedColor);
-                    
-                    // Trova e attiva il pulsante corrispondente
-                    $('.color-option').removeClass('active');
-                    const $colorBtn = $(`.color-option[data-color="${savedColor}"]`);
-                    $colorBtn.addClass('active');
-                    
-                    // Debug
-                    console.log('Caricato colore salvato:', savedColor);
-                    console.log('Pulsante trovato:', $colorBtn.length > 0);
-                } else {
-                    // Default in base al tema corrente
-                    const isDarkMode = $('body').attr('data-theme') === 'dark';
-                    const defaultColor = isDarkMode ? '#1e1e1e' : '#ffffff';
-                    
-                    // Imposta il colore predefinito
-                    document.documentElement.style.setProperty('--photo-grid-bg', defaultColor);
-                    
-                    // Attiva il pulsante corrispondente
-                    $('.color-option').removeClass('active');
-                    $(`.color-option[data-color="${defaultColor}"]`).addClass('active');
-                    
-                    // Debug
-                    console.log('Impostato colore predefinito:', defaultColor);
-                }
+            // Load saved color preference if it exists
+            const savedColor = localStorage.getItem('photoGridBgColor');
+            if (savedColor) {
+                document.documentElement.style.setProperty('--photo-grid-bg', savedColor);
+                $(`.color-option[data-color="${savedColor}"]`).addClass('active');
+            } else {
+                // Default to white
+                $('.color-option[data-color="#ffffff"]').addClass('active');
             }
-            
-            // Inizializza il selettore di colori
-            initColorSelector();
-            
-            // Quando cambia il tema, reinizializza il selettore
-            $(document).on('themeChanged', function() {
-                console.log('Tema cambiato, reinizializzazione selettore colori');
-                initColorSelector();
-            });
 
             // Force sidebar to be hidden on mobile
             function applySidebarState() {
@@ -1640,8 +1604,6 @@
                         success: function(data) {
                             $('body').attr('data-theme', data.dark_mode ? 'dark' : 'light');
                             updateDarkModeIcon();
-                            // Emetti evento per il cambio tema
-                            $(document).trigger('themeChanged');
                         },
                         error: function(xhr) {
                             console.error("Error toggling dark mode:", xhr.responseText);
@@ -1661,8 +1623,6 @@
                     $('body').attr('data-theme', newTheme);
                     localStorage.setItem('guestTheme', newTheme);
                     updateDarkModeIcon();
-                    // Emetti evento per il cambio tema
-                    $(document).trigger('themeChanged');
                 });
             }
             

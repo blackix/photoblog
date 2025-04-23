@@ -125,6 +125,10 @@ def api_photo_detail(request, photo_id):
     if request.user.is_authenticated:
         user_liked = Like.objects.filter(user=request.user, photo=photo).exists()
     
+    # Get metadata from the JSONField
+    metadata = photo.metadata or {}
+    camera_info = metadata.get('CameraInfo', {})
+    
     data = {
         'id': photo.id,
         'image_url': photo.image.url,
@@ -134,7 +138,14 @@ def api_photo_detail(request, photo_id):
         'likes_count': Like.objects.filter(photo=photo).count(),
         'comments_count': Comment.objects.filter(photo=photo).count(),
         'view_count': photo.view_count,
-        'has_liked': user_liked
+        'has_liked': user_liked,
+        # Adding EXIF metadata from the metadata JSONField
+        'camera_model': f"{camera_info.get('Marca', '')} {camera_info.get('Modello', '')}".strip() or None,
+        'focal_length': camera_info.get('Lunghezza Focale'),
+        'f_number': camera_info.get('Apertura'),
+        'exposure': camera_info.get('Tempo Esposizione'),
+        'iso': camera_info.get('ISO'),
+        'date_taken': metadata.get('DateTimeOriginal')
     }
     
     return JsonResponse(data)
