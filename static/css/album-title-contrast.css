@@ -1,0 +1,37 @@
+/**
+ * CSS per gestire automaticamente il contrasto tra il titolo dell'album e lo sfondo
+ */
+
+/* Stile base per il titolo dell'album */
+.album-header {
+    grid-column: 1 / -1;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 15px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid rgba(224, 224, 224, 0.5);
+}
+
+/* Titolo dell'album con sfondo scuro */
+.dark-background .album-title {
+    color: white !important;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
+}
+
+/* Titolo dell'album con sfondo chiaro */
+.light-background .album-title {
+    color: #333 !important;
+    text-shadow: 0 1px 2px rgba(255, 255, 255, 0.5);
+}
+
+/* Stile per il pulsante di aggiunta foto */
+.dark-background .add-button {
+    background-color: rgba(255, 255, 255, 0.2);
+    color: white;
+}
+
+.light-background .add-button {
+    background-color: rgba(0, 0, 0, 0.1);
+    color: #333;
+}

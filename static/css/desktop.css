@@ -5,15 +5,11 @@
 /* Import Prata font for page titles */
 @import url('https://fonts.googleapis.com/css2?family=Prata&display=swap');
 
-/* Album separator line */
+/* Album section spacing */
 .album-section {
-    border-bottom: 1px solid #e0e0e0;
+    position: relative;
     padding-bottom: 20px;
     margin-bottom: 30px;
-}
-
-.album-section:last-child {
-    border-bottom: none;
 }
 
 /* Larger page title with Prata font */
@@ -27,11 +23,21 @@
     font-size: 1.2rem;
 }
 
-/* Breadcrumb styling */
+/* Breadcrumb styling with gradient separator */
 .breadcrumb-container {
+    position: relative;
     padding: 10px 0;
     margin-bottom: 20px;
-    border-bottom: 1px solid #e0e0e0;
+}
+
+.breadcrumb-container::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 1px;
+    background: linear-gradient(to right, rgba(224, 224, 224, 0), rgba(224, 224, 224, 1) 15%, rgba(224, 224, 224, 1) 85%, rgba(224, 224, 224, 0));
 }
 
 .breadcrumb {
@@ -49,12 +55,27 @@
     color: #6c757d;
 }
 
-/* New album and post buttons */
-.section-header {
+/* Album header inside grid */
+.album-header {
     display: flex;
     align-items: center;
     justify-content: space-between;
     margin-bottom: 15px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid rgba(224, 224, 224, 0.5);
+}
+
+/* Auto-contrast text that adapts to background color */
+.auto-contrast-text {
+    color: var(--heading-color);
+}
+
+[data-theme="dark"] .auto-contrast-text {
+    color: white;
+}
+
+[data-theme="light"] .auto-contrast-text {
+    color: #333;
 }
 
 .add-button {

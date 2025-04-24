@@ -1,0 +1,73 @@
+/**
+ * CSS per il contrasto tra il titolo dell'album e lo sfondo della griglia
+ */
+
+/* Stile per l'intestazione dell'album */
+.album-header {
+    grid-column: 1 / -1;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    margin-bottom: 20px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid rgba(224, 224, 224, 0.5);
+    text-align: center;
+}
+
+.album-title {
+    font-family: 'Prata', serif;
+    font-size: 2rem;
+    margin: 0;
+}
+
+/* Pulsante di aggiunta foto */
+.add-button {
+    position: absolute;
+    right: 20px;
+    top: 20px;
+}
+
+/* Colori di sfondo predefiniti e colori di testo corrispondenti */
+:root[style*="--photo-grid-bg: #ffffff"] .album-title {
+    color: #333333 !important;
+}
+
+:root[style*="--photo-grid-bg: #f8f9fa"] .album-title {
+    color: #333333 !important;
+}
+
+:root[style*="--photo-grid-bg: #e9ecef"] .album-title {
+    color: #333333 !important;
+}
+
+:root[style*="--photo-grid-bg: #dee2e6"] .album-title {
+    color: #333333 !important;
+}
+
+:root[style*="--photo-grid-bg: #ced4da"] .album-title {
+    color: #333333 !important;
+}
+
+:root[style*="--photo-grid-bg: #adb5bd"] .album-title {
+    color: #333333 !important;
+}
+
+:root[style*="--photo-grid-bg: #6c757d"] .album-title {
+    color: #ffffff !important;
+}
+
+:root[style*="--photo-grid-bg: #495057"] .album-title {
+    color: #ffffff !important;
+}
+
+:root[style*="--photo-grid-bg: #343a40"] .album-title {
+    color: #ffffff !important;
+}
+
+:root[style*="--photo-grid-bg: #212529"] .album-title {
+    color: #ffffff !important;
+}
+
+:root[style*="--photo-grid-bg: #000000"] .album-title {
+    color: #ffffff !important;
+}

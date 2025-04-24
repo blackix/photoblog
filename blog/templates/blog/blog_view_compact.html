@@ -4,19 +4,14 @@
 {% block content %}
 <div class="container"
      data-toggle-like-url-base="{% url 'toggle_like_photo' photo_id=0 %}"
-     data-is-authenticated="{{ user.is_authenticated|yesno:'true,false' }}">
+     data-is-authenticated="{{ is_authenticated|yesno:'true,false' }}">
     
-    <!-- Breadcrumb navigation -->
-    <nav aria-label="breadcrumb" class="breadcrumb-container">
-        <ol class="breadcrumb">
-            <li class="breadcrumb-item"><a href="{% url 'home' %}">Home</a></li>
-            <li class="breadcrumb-item active" aria-current="page">Blog di {{ blog_owner.username }}</li>
-        </ol>
-    </nav>
+    <!-- Spazio superiore -->
+    <div style="margin-top: 20px;"></div>
     
     <div class="blog-header mb-4">
         <div>
-            <h2>Blog di {{ blog_owner.username }}</h2>
+            <h2>KIX photo blog</h2>
             <p style="font-style: italic;">{{ settings.tagline }}</p>
         </div>
     </div>
@@ -27,15 +22,15 @@
         
         {% for album in album_list %}
             <div class="album-section mb-4">
-                <div class="section-header">
-                    <h2 class="album-title">{{ album.grouper }}</h2>
-                    {% if user.is_authenticated and user.id == blog_owner.id %}
-                    <a href="{% url 'album_detail' pk=album.list.0.album_id %}" class="add-button" title="Aggiungi foto">
-                        <i class="fas fa-plus"></i>
-                    </a>
-                    {% endif %}
-                </div>
                 <div class="photo-grid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 20px; background-color: var(--photo-grid-bg, #ffffff); padding: 20px; border-radius: 8px;">
+                    <div class="album-header">
+                        <h2 class="album-title" id="album-title-{{ album.list.0.album_id }}">{{ album.grouper }}</h2>
+                        {% if user.is_authenticated and user.id == blog_owner.id %}
+                        <a href="{% url 'album_detail' pk=album.list.0.album_id %}" class="add-button" title="Aggiungi foto">
+                            <i class="fas fa-plus"></i>
+                        </a>
+                        {% endif %}
+                    </div>
                     {% for photo in album.list %}
                         <div class="photo-thumbnail" data-photo-id="{{ photo.id }}" style="width: 200px; height: 200px; overflow: hidden; border-radius: 8px; cursor: pointer; position: relative;">
                             <img src="{{ photo.thumbnail_url|default:photo.image_url }}" alt="{{ photo.caption|default:'Foto' }}" style="width: 100%; height: 100%; object-fit: cover;">
@@ -311,30 +306,114 @@ $(document).ready(function() {
     function toggleLike(photoId) {
         console.log('Toggling like for photo ID:', photoId);
         
-        // Client-side like for all users using localStorage
-        const likedPhotosKey = 'likedPhotos';
-        let likedPhotos = JSON.parse(localStorage.getItem(likedPhotosKey) || '{}');
+        // Get the toggle like URL from the data attribute
+        const toggleLikeUrlBase = $('div.container').data('toggle-like-url-base');
+        const isAuthenticated = $('div.container').data('is-authenticated') === true;
         
-        // Toggle like status
-        const isLiked = likedPhotos[photoId];
-        if (isLiked) {
-            delete likedPhotos[photoId];
-            $('#likeIcon').removeClass('text-danger');
-            // Decrease like count if > 0
-            let currentLikes = parseInt($('#likeCount').text());
-            if (currentLikes > 0) currentLikes--;
-            $('#likeCount').text(currentLikes);
-        } else {
-            likedPhotos[photoId] = true;
-            $('#likeIcon').addClass('text-danger');
-            // Increase like count
-            let currentLikes = parseInt($('#likeCount').text());
-            currentLikes++;
-            $('#likeCount').text(currentLikes);
+        // Se l'utente non è autenticato e sta cercando di mettere like, mostra un messaggio più elegante
+        if (!isAuthenticated) {
+            // Salva il like solo localmente senza mostrare alert
+            const likedPhotosKey = 'likedPhotos';
+            let likedPhotos = JSON.parse(localStorage.getItem(likedPhotosKey) || '{}');
+            
+            // Toggle like status locally
+            const isLiked = likedPhotos[photoId];
+            if (isLiked) {
+                delete likedPhotos[photoId];
+                $('#likeIcon').removeClass('text-danger');
+                // Decrease like count if > 0
+                let currentLikes = parseInt($('#likeCount').text());
+                if (currentLikes > 0) currentLikes--;
+                $('#likeCount').text(currentLikes);
+            } else {
+                likedPhotos[photoId] = true;
+                $('#likeIcon').addClass('text-danger');
+                // Increase like count
+                let currentLikes = parseInt($('#likeCount').text());
+                currentLikes++;
+                $('#likeCount').text(currentLikes);
+                
+                // Mostra un messaggio elegante per invitare l'utente ad accedere
+                if (!$('.login-toast').length) {
+                    const toast = $(`
+                        <div class="login-toast" style="position: fixed; bottom: 20px; right: 20px; background-color: rgba(0,0,0,0.8); color: white; padding: 15px; border-radius: 5px; z-index: 10000; max-width: 300px; box-shadow: 0 4px 8px rgba(0,0,0,0.2);">
+                            <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px;">
+                                <span style="font-weight: bold;">Accedi per salvare i tuoi like</span>
+                                <span class="close-toast" style="cursor: pointer; font-size: 20px;">&times;</span>
+                            </div>
+                            <p style="margin-bottom: 10px;">I tuoi like saranno visibili solo su questo dispositivo finché non accedi.</p>
+                            <a href="/login/" class="btn" style="background-color: #007bff; color: white; text-decoration: none; padding: 5px 10px; border-radius: 3px; display: inline-block;">Accedi</a>
+                        </div>
+                    `);
+                    
+                    $('body').append(toast);
+                    
+                    // Chiudi il toast quando si clicca sulla X
+                    $('.close-toast').on('click', function() {
+                        $('.login-toast').fadeOut(300, function() { $(this).remove(); });
+                    });
+                    
+                    // Chiudi automaticamente il toast dopo 5 secondi
+                    setTimeout(function() {
+                        $('.login-toast').fadeOut(300, function() { $(this).remove(); });
+                    }, 5000);
+                }
+            }
+            
+            // Save updated likes to localStorage
+            localStorage.setItem(likedPhotosKey, JSON.stringify(likedPhotos));
+            return;
         }
         
-        // Save updated likes to localStorage
-        localStorage.setItem(likedPhotosKey, JSON.stringify(likedPhotos));
+        // Per utenti autenticati, invia la richiesta al server
+        // Costruisci l'URL sostituendo il placeholder
+        const toggleLikeUrl = toggleLikeUrlBase.replace('0', photoId);
+        
+        // Aggiorna immediatamente l'UI per un feedback più veloce
+        const $likeIcon = $('#likeIcon');
+        const isLiked = $likeIcon.hasClass('text-danger');
+        let currentLikes = parseInt($('#likeCount').text());
+        
+        if (isLiked) {
+            $likeIcon.removeClass('text-danger');
+            if (currentLikes > 0) currentLikes--;
+        } else {
+            $likeIcon.addClass('text-danger');
+            currentLikes++;
+        }
+        $('#likeCount').text(currentLikes);
+        
+        // Invia la richiesta al server
+        $.ajax({
+            url: toggleLikeUrl,
+            type: 'POST',
+            headers: {
+                'X-CSRFToken': $('meta[name="csrf-token"]').attr('content')
+            },
+            success: function(data) {
+                console.log('Like toggled successfully:', data);
+                // Aggiorna il conteggio dei like con il valore dal server
+                $('#likeCount').text(data.likes_count);
+                
+                // Aggiorna lo stato del like in base alla risposta del server
+                if (data.liked) {
+                    $('#likeIcon').addClass('text-danger');
+                } else {
+                    $('#likeIcon').removeClass('text-danger');
+                }
+            },
+            error: function(xhr, status, error) {
+                console.error('Error toggling like:', error);
+                // Ripristina lo stato precedente in caso di errore
+                if (isLiked) {
+                    $likeIcon.addClass('text-danger');
+                    $('#likeCount').text(currentLikes + 1);
+                } else {
+                    $likeIcon.removeClass('text-danger');
+                    if (currentLikes > 0) $('#likeCount').text(currentLikes - 1);
+                }
+            }
+        });
     }
     
     // Add click handler for like button
@@ -449,27 +528,91 @@ $(document).ready(function() {
 
     // Initialize color selector
     $(document).ready(function() {
+        // Funzione per determinare se un colore è scuro
+        function isColorDark(hexColor) {
+            // Converti il colore esadecimale in RGB
+            let r, g, b;
+            
+            if (hexColor.startsWith('#')) {
+                const hex = hexColor.substring(1);
+                r = parseInt(hex.substr(0, 2), 16);
+                g = parseInt(hex.substr(2, 2), 16);
+                b = parseInt(hex.substr(4, 2), 16);
+            } else {
+                // Colore non riconosciuto, assumiamo chiaro
+                return false;
+            }
+            
+            // Calcola la luminosità (formula standard per la percezione umana)
+            const luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
+            
+            // Se la luminosità è inferiore a 0.5, il colore è considerato scuro
+            return luminance < 0.5;
+        }
+        
+        // Funzione per aggiornare il colore del testo in base al colore di sfondo
+        function updateTextColor(backgroundColor) {
+            // Seleziona tutti i titoli degli album
+            $('.album-title').each(function() {
+                if (isColorDark(backgroundColor)) {
+                    // Sfondo scuro, testo bianco
+                    $(this).css('color', 'white');
+                } else {
+                    // Sfondo chiaro, testo nero
+                    $(this).css('color', '#333');
+                }
+            });
+        }
+        
+        // Funzione per applicare il colore della griglia
+        function applyGridColor(color) {
+            // Applica direttamente allo stile inline di ogni griglia invece di usare la variabile CSS
+            $('.photo-grid').css('background-color', color);
+            
+            // Aggiorna il colore del testo in base al colore di sfondo
+            updateTextColor(color);
+            
+            // Aggiorna lo stato attivo del selettore di colori
+            $('.color-option').removeClass('active');
+            $(`.color-option[data-color="${color}"]`).addClass('active');
+        }
+        
         // Color selector functionality
         $('.color-option').click(function() {
             const selectedColor = $(this).data('color');
-            document.documentElement.style.setProperty('--photo-grid-bg', selectedColor);
+            
+            // Applica il colore direttamente alle griglie
+            applyGridColor(selectedColor);
             
             // Save preference to localStorage
             localStorage.setItem('photoGridBgColor', selectedColor);
-            
-            // Update active state
-            $('.color-option').removeClass('active');
-            $(this).addClass('active');
         });
+        
+        // Gestisci il cambio di tema (dark/light mode)
+        const themeToggle = $('#theme-toggle');
+        if (themeToggle.length) {
+            themeToggle.on('click', function() {
+                // Dopo aver cambiato il tema, riapplica il colore della griglia
+                setTimeout(function() {
+                    const savedColor = localStorage.getItem('photoGridBgColor');
+                    if (savedColor) {
+                        applyGridColor(savedColor);
+                    }
+                }, 50); // Piccolo ritardo per assicurarsi che il cambio tema sia completato
+            });
+        }
         
         // Load saved color preference if it exists
         const savedColor = localStorage.getItem('photoGridBgColor');
         if (savedColor) {
-            document.documentElement.style.setProperty('--photo-grid-bg', savedColor);
-            $(`.color-option[data-color="${savedColor}"]`).addClass('active');
+            // Applica il colore direttamente alle griglie
+            applyGridColor(savedColor);
         } else {
-            // Default to white
-            $('.color-option[data-color="#ffffff"]').addClass('active');
+            // Default to white in light mode or dark gray in dark mode
+            const isDarkMode = $('html').attr('data-theme') === 'dark';
+            const defaultColor = isDarkMode ? '#1e1e1e' : '#ffffff';
+            applyGridColor(defaultColor);
+            localStorage.setItem('photoGridBgColor', defaultColor);
         }
     });
 </script>

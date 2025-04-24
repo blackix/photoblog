@@ -452,7 +452,8 @@ def blog_view_compact(request, username):
         'blog_owner': blog_owner,
         'albums': albums,
         'photos_data': photos_data,
-        'settings': blog_settings
+        'settings': blog_settings,
+        'is_authenticated': request.user.is_authenticated
     }
     return render(request, 'blog/blog_view_compact.html', context)
 
@@ -787,6 +788,35 @@ def test_carousel(request):
     })
 
 @login_required
+def photo_view_api(request, photo_id):
+    """
+    API endpoint per incrementare il contatore delle visualizzazioni di una foto
+    e restituire i dati aggiornati (visualizzazioni e like).
+    """
+    from django.views.decorators.http import require_POST
+    from .models import Photo
+    
+    if request.method != 'POST':
+        return JsonResponse({"error": "Method not allowed"}, status=405)
+    
+    try:
+        photo = get_object_or_404(Photo, id=photo_id)
+        photo.view_count += 1
+        photo.save(update_fields=['view_count'])
+        
+        # Verifica se l'utente ha messo like alla foto
+        user_liked = False
+        if request.user.is_authenticated:
+            user_liked = Like.objects.filter(user=request.user, photo=photo).exists()
+        
+        return JsonResponse({
+            'views': photo.view_count,
+            'likes': photo.likes_count,
+            'user_liked': user_liked
+        })
+    except Exception as e:
+        return JsonResponse({"error": str(e)}, status=500)
+
 def toggle_like_photo(request, photo_id):
     """
     Vista per aggiungere o rimuovere un like a una foto.

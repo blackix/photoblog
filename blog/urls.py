@@ -49,6 +49,7 @@ urlpatterns = [
     path('toggle-dark-mode/', views.toggle_dark_mode, name='toggle_dark_mode'),
     path('photos/<int:photo_id>/update-caption/', views.update_photo_caption, name='update_photo_caption'),
     path('api/photo/<int:photo_id>/metadata/', views.get_photo_metadata, name='get_photo_metadata'),
+    path('api/photo/<int:photo_id>/view/', views.photo_view_api, name='photo_view_api'),
     
     # Post URLs
     path('posts/', views.post_list, name='post_list'),
