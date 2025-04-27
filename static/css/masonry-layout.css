@@ -1,0 +1,109 @@
+/**
+ * CSS per il layout masonry della griglia di foto
+ * Versione migliorata con supporto alla libreria Masonry.js
+ */
+
+/* Stile per il container masonry */
+.masonry-grid {
+    width: 100%;
+    padding: 20px;
+    border-radius: 8px;
+    position: relative;
+    margin: 0 auto;
+    background-color: var(--photo-grid-bg, #ffffff);
+}
+
+/* Supporto per dark mode */
+[data-theme="dark"] .masonry-grid {
+    background-color: var(--photo-grid-bg, #1e1e1e);
+}
+
+/* Stile per gli elementi masonry */
+.masonry-item {
+    width: 200px;
+    margin: 10px;
+    overflow: hidden;
+    border-radius: 8px;
+    position: relative;
+    cursor: pointer;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+}
+
+.masonry-item:hover {
+    transform: translateY(-2px); /* Effetto hover più sottile */
+    z-index: 10;
+}
+
+/* Stile per le immagini nel masonry */
+.masonry-item img {
+    width: 100%;
+    height: auto;
+    display: block;
+    transition: opacity 0.2s ease;
+    border-radius: 4px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+}
+
+/* Stile per la didascalia della foto */
+.masonry-caption {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background: rgba(0, 0, 0, 0.7);
+    color: white;
+    padding: 8px 12px;
+    font-size: 14px;
+    font-weight: 500;
+    opacity: 0;
+    transform: translateY(100%);
+    transition: all 0.3s ease;
+    text-align: center;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.masonry-item:hover .masonry-caption {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+/* Stile per l'intestazione dell'album nel layout masonry */
+.masonry-grid .album-header {
+    width: 100%;
+    margin-bottom: 20px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid rgba(224, 224, 224, 0.5);
+    position: relative;
+    z-index: 2;
+}
+
+/* Media query per dispositivi mobili */
+@media (max-width: 768px) {
+    .masonry-item {
+        width: 150px;
+        margin: 5px;
+    }
+    
+    .masonry-grid {
+        padding: 10px;
+    }
+    
+    .masonry-caption {
+        font-size: 12px;
+        padding: 5px 8px;
+    }
+}
+
+/* Media query per tablet */
+@media (min-width: 769px) and (max-width: 1024px) {
+    .masonry-item {
+        width: 180px;
+        margin: 8px;
+    }
+    
+    .masonry-grid {
+        padding: 15px;
+    }
+}

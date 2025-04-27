@@ -15,8 +15,8 @@
         
         {% for album in album_list %}
             <div class="album-section mb-4">
-                <div class="photo-grid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 20px; background-color: var(--photo-grid-bg, #ffffff); padding: 20px; border-radius: 8px;">
-                    <div class="album-header">
+                <div class="masonry-grid" style="border-radius: 8px;">
+                    <div class="album-header" style="grid-column: 1 / -1;">
                         <h2 class="album-title" id="album-title-{{ album.list.0.album_id }}">{{ album.grouper }}</h2>
                         {% if user.is_authenticated and user.id == blog_owner.id %}
                         <a href="{% url 'album_detail' pk=album.list.0.album_id %}" class="add-button" title="Aggiungi foto">
@@ -25,9 +25,9 @@
                         {% endif %}
                     </div>
                     {% for photo in album.list %}
-                        <div class="photo-thumbnail" data-photo-id="{{ photo.id }}" style="width: 200px; height: 200px; overflow: hidden; border-radius: 8px; cursor: pointer; position: relative;">
-                            <img src="{{ photo.thumbnail_url|default:photo.image_url }}" alt="{{ photo.caption|default:'Foto' }}" style="width: 100%; height: 100%; object-fit: cover;">
-                            <div class="photo-caption-overlay">{{ photo.caption|default:'Foto' }}</div>
+                        <div class="masonry-item photo-thumbnail" data-photo-id="{{ photo.id }}">
+                            <img src="{{ photo.thumbnail_url|default:photo.image_url }}" alt="{{ photo.caption|default:'Foto' }}">
+                            <div class="masonry-caption">{{ photo.caption|default:'Foto' }}</div>
                         </div>
                     {% endfor %}
                 </div>
@@ -186,6 +186,7 @@ z-index: 99999;">
 <script src="{% static 'js/vr-viewer.js' %}"></script>
 <script src="{% static 'js/photo-interactions.js' %}"></script>
 <script src="{% static 'js/blog-view-compact.js' %}"></script>
+<script src="{% static 'js/dark-mode-color-fix.js' %}"></script>
 <script>
 $(document).ready(function() {
     console.log("Document ready, initializing photo viewer...");
@@ -271,7 +272,8 @@ $(document).ready(function() {
             } else if (e.key === "ArrowRight") {
                 $navNext.click();
             } else if (e.key === "Escape") {
-                closeModal();
+                // Usa esattamente lo stesso comportamento della crocina (X)
+                $closeModal.click();
             }
         }
     });
@@ -453,8 +455,17 @@ $(document).ready(function() {
             "opacity": 1
         }, 300);
         
-        // Prevent body scrolling
-        $("body").css("overflow", "hidden");
+        // Salva la posizione di scrolling attuale
+        scrollPosition = window.pageYOffset || document.documentElement.scrollTop;
+        
+        // Prevent body scrolling ma mantieni la posizione
+        $("body").css({
+            "overflow": "hidden",
+            "position": "fixed",
+            "width": "100%",
+            "height": "100%",
+            "top": -scrollPosition + "px"
+        });
         
         // Precarica l'immagine
         const img = new Image();
@@ -501,10 +512,32 @@ $(document).ready(function() {
     }
     
     // Function to close modal
+    // Variabile per memorizzare la posizione di scrolling
+    let scrollPosition = 0;
+    
     function closeModal() {
         console.log("Closing modal");
-        $modal.css("display", "none");
-        $("body").css("overflow", "auto");
+        // Nascondi il modale con una leggera dissolvenza
+        $modal.animate({
+            opacity: 0
+        }, 200, function() {
+            $(this).css("display", "none");
+            // Ripristina lo scrolling e la posizione
+            $("body").css({
+                "overflow": "auto",
+                "position": "static",
+                "width": "auto",
+                "height": "auto"
+            });
+            
+            // Ripristina la posizione di scrolling
+            window.scrollTo(0, scrollPosition);
+            
+            // Forza un reflow del DOM per assicurarsi che lo scrolling funzioni
+            setTimeout(function() {
+                $(window).trigger('resize');
+            }, 50);
+        });
     }
     
     console.log("Photo viewer initialization complete");

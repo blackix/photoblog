@@ -1,17 +1,18 @@
 /**
  * CSS per il contrasto tra il titolo dell'album e lo sfondo della griglia
+ * Versione semplificata con solo tre colori: bianco, grigio tenue, grigio scuro
  */
 
 /* Stile per l'intestazione dell'album */
 .album-header {
     grid-column: 1 / -1;
     display: flex;
-    justify-content: center;
+    justify-content: flex-start;
     align-items: center;
     margin-bottom: 20px;
     padding-bottom: 10px;
     border-bottom: 1px solid rgba(224, 224, 224, 0.5);
-    text-align: center;
+    text-align: left;
 }
 
 .album-title {
@@ -22,52 +23,104 @@
 
 /* Pulsante di aggiunta foto */
 .add-button {
-    position: absolute;
-    right: 20px;
-    top: 20px;
+    position: relative;
+    margin-left: 15px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    transition: all 0.2s ease;
 }
 
-/* Colori di sfondo predefiniti e colori di testo corrispondenti */
+.add-button i {
+    color: inherit;
+}
+
+.add-button:hover {
+    opacity: 0.8;
+}
+
+/* Aggiunta di un outline visibile ai container degli album */
+.masonry-grid {
+    border: 1px solid rgba(0, 0, 0, 0.1);
+    border-radius: 8px;
+    overflow: hidden;
+    padding: 15px;
+    transition: box-shadow 0.3s ease;
+}
+
+/* Hover effect per l'outline */
+.masonry-grid:hover {
+    box-shadow: 0 0 12px rgba(0, 0, 0, 0.2);
+}
+
+/* ===== REGOLE PER IL COLOR SELECTOR ===== */
+
+/* OPZIONE 1: SFONDO BIANCO (#FFFFFF) */
 :root[style*="--photo-grid-bg: #ffffff"] .album-title {
-    color: #333333 !important;
+    color: #000000 !important;
 }
 
+:root[style*="--photo-grid-bg: #ffffff"] .add-button {
+    color: #000000 !important;
+    background-color: #e0e0e0 !important;
+    border: 1px solid rgba(0, 0, 0, 0.3) !important;
+}
+
+/* OPZIONE 2: SFONDO GRIGIO TENUE (#F8F9FA) */
 :root[style*="--photo-grid-bg: #f8f9fa"] .album-title {
-    color: #333333 !important;
+    color: #000000 !important;
 }
 
-:root[style*="--photo-grid-bg: #e9ecef"] .album-title {
-    color: #333333 !important;
+:root[style*="--photo-grid-bg: #f8f9fa"] .add-button {
+    color: #000000 !important;
+    background-color: #e0e0e0 !important;
+    border: 1px solid rgba(0, 0, 0, 0.3) !important;
 }
 
-:root[style*="--photo-grid-bg: #dee2e6"] .album-title {
-    color: #333333 !important;
-}
-
-:root[style*="--photo-grid-bg: #ced4da"] .album-title {
-    color: #333333 !important;
-}
-
-:root[style*="--photo-grid-bg: #adb5bd"] .album-title {
-    color: #333333 !important;
-}
-
-:root[style*="--photo-grid-bg: #6c757d"] .album-title {
+/* OPZIONE 3: SFONDO GRIGIO SCURO (#101010) */
+:root[style*="--photo-grid-bg: #101010"] .album-title,
+.masonry-grid[style*="background-color: #101010"] .album-title,
+.masonry-grid[style*="background-color: rgb(16, 16, 16)"] .album-title {
     color: #ffffff !important;
 }
 
-:root[style*="--photo-grid-bg: #495057"] .album-title {
+:root[style*="--photo-grid-bg: #101010"] .add-button,
+.masonry-grid[style*="background-color: #101010"] .add-button,
+.masonry-grid[style*="background-color: rgb(16, 16, 16)"] .add-button {
+    color: #ffffff !important;
+    background-color: #444444 !important;
+    border: 1px solid rgba(255, 255, 255, 0.3) !important;
+}
+
+/* Per compatibilità con il colore nero esistente */
+:root[style*="--photo-grid-bg: #000000"] .album-title,
+.masonry-grid[style*="background-color: #000000"] .album-title,
+.masonry-grid[style*="background-color: rgb(0, 0, 0)"] .album-title {
     color: #ffffff !important;
 }
 
-:root[style*="--photo-grid-bg: #343a40"] .album-title {
+:root[style*="--photo-grid-bg: #000000"] .add-button,
+.masonry-grid[style*="background-color: #000000"] .add-button,
+.masonry-grid[style*="background-color: rgb(0, 0, 0)"] .add-button {
+    color: #ffffff !important;
+    background-color: #444444 !important;
+    border: 1px solid rgba(255, 255, 255, 0.3) !important;
+}
+
+/* Regola specifica per assicurarsi che il testo sia bianco su sfondo nero */
+[style*="background-color: #000000"] .album-title,
+[style*="background-color: rgb(0, 0, 0)"] .album-title,
+[style*="background: #000000"] .album-title,
+[style*="background: rgb(0, 0, 0)"] .album-title {
     color: #ffffff !important;
 }
 
-:root[style*="--photo-grid-bg: #212529"] .album-title {
-    color: #ffffff !important;
-}
-
-:root[style*="--photo-grid-bg: #000000"] .album-title {
+[style*="background-color: #101010"] .album-title,
+[style*="background-color: rgb(16, 16, 16)"] .album-title,
+[style*="background: #101010"] .album-title,
+[style*="background: rgb(16, 16, 16)"] .album-title {
     color: #ffffff !important;
 }

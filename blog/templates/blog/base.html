@@ -14,6 +14,7 @@
     <link rel="stylesheet" href="{% static 'css/desktop.css' %}">
     <link rel="stylesheet" href="{% static 'css/album-title-colors.css' %}">
     <link rel="stylesheet" href="{% static 'css/tablet.css' %}">
+    <link rel="stylesheet" href="{% static 'css/masonry-layout.css' %}">
     <!-- Stili per la griglia di foto nella barra laterale -->
     <style>
         .sidebar-photo-grid {
@@ -947,14 +948,12 @@
                                 <li class="mb-2">
                                     <a href="{% url 'album_detail' album.pk %}" class="text-decoration-none">
                                         <span class="sidebar-full" style="font-weight: lighter;">{{ album.title }}</span>
-                                        <i class="fas fa-images sidebar-icon" title="{{ album.title }}"></i>
                                     </a>
                                 </li>
                             {% endfor %}
                             <li class="mb-2">
                                 <a href="{% url 'album_create' %}" class="text-decoration-none">
                                     <span class="sidebar-full"><strong>Nuovo Album</strong></span>
-                                    <i class="fas fa-plus sidebar-icon" title="Nuovo Album"></i>
                                 </a>
                             </li>
                         </ul>
@@ -973,14 +972,12 @@
                         <ul class="list-unstyled mt-2">
                             <li class="mb-2">
                                 <a href="{% url 'post_list' %}" class="text-decoration-none">
-                                    <span class="sidebar-full" >I tuoi Post</span>
-                                    <i class="fas fa-file-alt sidebar-icon" title="I tuoi Post"></i>
+                                    <span class="sidebar-full">I tuoi Post</span>
                                 </a>
                             </li>
                             <li class="mb-2">
                                 <a href="{% url 'post_create' %}" class="text-decoration-none">
-                                    <span class="sidebar-full">Nuovo Post <i class="fas fa-plus" style="font-size: 0.8em;"></i></span>
-                                    <i class="fas fa-plus sidebar-icon" title="Nuovo Post"></i>
+                                    <span class="sidebar-full"><strong>Nuovo Post</strong></span>
                                 </a>
                             </li>
                         </ul>
@@ -1092,10 +1089,8 @@
         <div class="horizontal-color-selector" id="gridColorSelector">
             <div class="color-options">
                 <button class="color-option" data-color="#ffffff" style="background-color: #ffffff;"></button>
-                <button class="color-option" data-color="#e0e0e0" style="background-color: #e0e0e0;"></button>
-                <button class="color-option" data-color="#9e9e9e" style="background-color: #9e9e9e;"></button>
-                <button class="color-option" data-color="#424242" style="background-color: #424242;"></button>
-                <button class="color-option" data-color="#121212" style="background-color: #121212;"></button>
+                <button class="color-option" data-color="#f8f9fa" style="background-color: #f8f9fa;"></button>
+                <button class="color-option" data-color="#101010" style="background-color: #101010;"></button>
             </div>
         </div>
         {% endif %}
@@ -1114,6 +1109,8 @@
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
     <script src="{% static 'js/album-title-contrast.js' %}"></script>
+    <script src="{% static 'js/fix-dark-background-text.js' %}"></script>
+    <script src="{% static 'js/masonry-layout.js' %}"></script>
     <script src="{% static 'js/vr-viewer.js' %}"></script>
     <script src="{% static 'js/mobile.js' %}"></script>
     <script src="{% static 'js/vr-slideshow-integration.js' %}"></script>

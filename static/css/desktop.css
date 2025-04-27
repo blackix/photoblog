@@ -70,6 +70,22 @@
     color: var(--heading-color);
 }
 
+[data-theme="dark"] {
+    --bg-color: #121212;
+    --text-color: #e0e0e0;
+    --heading-color: #ffffff;
+    --border-color: #333333;
+    --sidebar-bg: #1e1e1e;
+    --card-bg: #1e1e1e;
+    --input-bg: #2d2d2d;
+    --input-text: #e0e0e0;
+    --btn-primary-bg: #2979ff;
+    --btn-primary-text: #ffffff;
+    --link-color: #64b5f6;
+    --modal-bg: #1e1e1e;
+    --modal-text: #e0e0e0;
+}
+
 [data-theme="dark"] .auto-contrast-text {
     color: white;
 }
